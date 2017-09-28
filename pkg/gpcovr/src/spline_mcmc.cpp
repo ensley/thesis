@@ -12,14 +12,14 @@ double d_prior_beta(arma::vec beta, double tau, bool l) {
       return 0;
     }
   }
-  
+
   double res = R::dnorm(beta(0), 0., sqrt(tau), true) + R::dnorm(beta(1), beta(0), sqrt(tau), true);
   int n = beta.n_elem;
-  
+
   for(int i = 2; i < n; ++i) {
     res += R::dnorm(beta(i), 2*beta(i-1) - beta(i-2), sqrt(tau), true);
   }
-  
+
   if(l) {
     return res;
   } else {
@@ -36,7 +36,7 @@ double d_prior_sigma(double sigma, double a, double b, bool l) {
       return 0;
     }
   }
-  
+
   double x = a * log(b) - lgamma(a) - (a+1) * log(sigma) - b / sigma;
   if (l) {
     return x;
@@ -54,7 +54,7 @@ double d_prior_tau(double tau, double a, double b, bool l) {
       return 0;
     }
   }
-  
+
   double x = a * log(b) - lgamma(a) - (a+1) * log(tau) - b / tau;
   if (l) {
     return x;
@@ -89,7 +89,7 @@ double lik(arma::vec y, arma::vec beta, double sigma, arma::mat spline, bool l) 
       return 0;
     }
   }
-  
+
   arma::vec avg = spline * beta;
   int n = avg.n_elem;
   double p = 0;
@@ -125,7 +125,7 @@ double d_q_tau(double tau_star, double tau, double v, bool l) {
 }
 
 //' Bayesian spline fitting, in C++
-//' 
+//'
 //' Don't use this directly. Use the wrapper function \code{\link{fitspline}}.
 //' @param B B
 //' @param y y
@@ -150,6 +150,7 @@ double d_q_tau(double tau_star, double tau, double v, bool l) {
 //' @return A list of length 3. The first element is a matrix where each row is a
 //'   random \code{beta} draw. The second and third are vectors where each
 //'   element is a random draw of \code{sigma} and \code{tau} respectively.
+//' @export
 // [[Rcpp::export]]
 List fitsplinecpp(int B,
                 arma::vec y,
@@ -172,33 +173,33 @@ List fitsplinecpp(int B,
                 double oar,
                 bool progress) {
   int n = spl.n_cols;
-  
+
   // storage
   arma::mat beta_samp(B, n);
   arma::vec sigma_samp(B);
   arma::vec tau_samp(B);
-  
+
   arma::mat beta_accepts(B, n, arma::fill::zeros);
   arma::vec sigma_accepts(B, arma::fill::zeros);
   arma::vec tau_accepts(B, arma::fill::zeros);
-  
+
   arma::mat v_beta(B, n);
   arma::vec v_sigma(B);
   arma::vec v_tau(B);
-  
+
   // starting values
   beta_accepts.row(0).fill(1);
   sigma_accepts(0) = 1;
   tau_accepts(0) = 1;
-  
+
   v_beta.row(0) = initBetaTune.t();
   v_sigma(0) = initSigmaTune;
   v_tau(0) = initTauTune;
-  
+
   arma::vec beta = initBeta;
   double sigma = initSigma;
   double tau = initTau;
-  
+
   // loop
   for(int i = 1; i < B; ++i) {
     // adaptive tuning
@@ -206,9 +207,9 @@ List fitsplinecpp(int B,
     arma::rowvec lfr_beta(n);
     double lfr_sigma;
     double lfr_tau;
-    
-    
-    
+
+
+
     if(i == 1) {
       lfr_beta = beta_accepts.row(i-1);
       lfr_sigma = sigma_accepts(i-1);
@@ -222,95 +223,95 @@ List fitsplinecpp(int B,
       lfr_sigma = arma::mean(sigma_accepts.subvec(i-r, i-1));
       lfr_tau = arma::mean(tau_accepts.subvec(i-r, i-1));
     }
-    
+
     v_beta.row(i) = exp(log(v_beta.row(i-1)) + gamma1 * (lfr_beta - oar));
     v_sigma(i) = exp(log(v_sigma(i-1)) + gamma1 * (lfr_sigma - oar));
     v_tau(i) = exp(log(v_tau(i-1)) + gamma1 * (lfr_tau - oar));
-    
+
     // update each of the betas one after another
     for(int j = 0; j < n; ++j) {
       arma::vec beta_star = beta;
       beta_star(j) = r_q_beta(beta(j), v_beta(i,j));
-      
+
       // numerator
       double num = lik(y, beta_star, sigma, spl, true) +
         d_prior(beta_star, sigma, tau, s_a, s_b, t_a, t_b, true) +
         d_q_beta(beta(j), beta_star(j), v_beta(i,j), true);
-        
+
       // denominator
       double denom = lik(y, beta, sigma, spl, true) +
         d_prior(beta, sigma, tau, s_a, s_b, t_a, t_b, true) +
         d_q_beta(beta_star(j), beta(j), v_beta(i,j), true);
-        
+
       double logr = num - denom;
-      
+
       if(log(R::runif(0., 1.)) < logr) {
         // accept the proposal
         beta(j) = beta_star(j);
         beta_accepts(i,j) = 1;
       }
-      
+
     }
-    
-    
+
+
     // update sigma
     double sigma_star = r_q_sigma(sigma, v_sigma(i));
-    
+
     // numerator
     double num = lik(y, beta, sigma_star, spl, true) +
       d_prior(beta, sigma_star, tau, s_a, s_b, t_a, t_b, true) +
       d_q_sigma(sigma, sigma_star, v_sigma(i), true);
-    
+
     // denominator
     double denom = lik(y, beta, sigma, spl, true) +
       d_prior(beta, sigma, tau, s_a, s_b, t_a, t_b, true) +
       d_q_sigma(sigma_star, sigma, v_sigma(i), true);
-    
+
     double logr = num - denom;
-    
+
     if(log(R::runif(0., 1.)) < logr) {
       // accept the proposal
       sigma = sigma_star;
       sigma_accepts(i) = 1;
     }
-    
-    
+
+
     // update tau
     double tau_star = r_q_tau(tau, v_tau(i));
-    
+
     // numerator
     num = d_prior(beta, sigma, tau_star, s_a, s_b, t_a, t_b, true) +
       d_q_tau(tau, tau_star, v_tau(i), true);
-    
+
     // denominator
     denom = d_prior(beta, sigma, tau, s_a, s_b, t_a, t_b, true) +
       d_q_tau(tau_star, tau, v_tau(i), true);
-    
+
     logr = num - denom;
-    
+
     if(log(R::runif(0., 1.)) < logr) {
       // accept the proposal
       tau = tau_star;
       tau_accepts(i) = 1;
     }
-    
+
     // save the current values
     beta_samp.row(i) = beta.t();
     sigma_samp(i) = sigma;
     tau_samp(i) = tau;
 
   }
-  
+
   arma::mat beta_final = beta_samp.tail_rows(B - burnin);
   arma::vec sigma_final = sigma_samp.tail(B - burnin);
   arma::vec tau_final = tau_samp.tail(B - burnin);
-  
+
   // return
   List ret;
   ret["b"] = beta_final;
   ret["s"] = sigma_final;
   ret["t"] = tau_final;
-  
+
   return ret;
-  
+
 }

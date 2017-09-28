@@ -66,7 +66,7 @@ double integrand(double x, void *p) {
 // ----------- MAIN FUNCTIONS
 
 
-// [[Rcpp::export]]
+
 RcppGSL::Vector d(int k, RcppGSL::Vector X, RcppGSL::Vector knots) {
   int K = knots.size(), xn = X.size();
   RcppGSL::Vector out(xn); // result vector
@@ -83,7 +83,7 @@ RcppGSL::Vector d(int k, RcppGSL::Vector X, RcppGSL::Vector knots) {
 }
 
 
-// [[Rcpp::export]]
+
 RcppGSL::Vector H(int i, RcppGSL::Vector X, RcppGSL::Vector knots) {
   int K = knots.size(), n = X.size();
 
@@ -246,7 +246,6 @@ RcppGSL::Vector dloglogspline(RcppGSL::Vector x, RcppGSL::Vector coefs, RcppGSL:
 }
 
 
-// [[Rcpp::export]]
 RcppGSL::Vector get_slopes(RcppGSL::Vector coefs, RcppGSL::Vector knots) {
   double kmin, kmax;
   gsl_vector_minmax(knots, &kmin, &kmax);
@@ -385,9 +384,10 @@ RcppGSL::Vector plogspline(RcppGSL::Vector x, RcppGSL::Vector coefs, RcppGSL::Ve
 //'
 //' AKA the quantile function.
 //'
-//' @param p The quantiles at which to evaluate the quantile function.
-//' @param coefs A vector of length \code{k} representing the basis coefficients.
-//' @param knots A vector of length \code{k} representing the knot locations.
+//' @param p The quantiles at which to evaluate the quantile function
+//' @param coefs A vector of length \code{k} representing the basis coefficients
+//' @param knots A vector of length \code{k} representing the knot locations
+//' @param grid_size The size of the grid that the integral will be evaluated on
 //' @return A vector of inverse CDF values. These will always be returned in
 //' increasing order, regardless of the original order of the quantiles.
 //' @export
@@ -415,9 +415,9 @@ RcppGSL::Vector qlogspline(RcppGSL::Vector p, RcppGSL::Vector coefs, RcppGSL::Ve
   double sm_cutoff = 1/a * exp(points[1]);
   double lg_cutoff = 1 + 1/b * exp(points[2]);
 
-  // printf("points: (%g,%g) (%g,%g) (%g,%g) (%g,%g)\n", kmin-1, gsl_vector_get(points,0), kmin, gsl_vector_get(points,1), kmax, gsl_vector_get(points,2), kmax+1, gsl_vector_get(points,3));
-  // printf("slopes: %g, %g\n", a, b);
-  // printf("cutoffs: %g, %g\n", sm_cutoff, lg_cutoff);
+  // Rprintf("points: (%g,%g) (%g,%g) (%g,%g) (%g,%g)\n", kmin-1, gsl_vector_get(points,0), kmin, gsl_vector_get(points,1), kmax, gsl_vector_get(points,2), kmax+1, gsl_vector_get(points,3));
+  // Rprintf("slopes: %g, %g\n", a, b);
+  // Rprintf("cutoffs: %g, %g\n", sm_cutoff, lg_cutoff);
 
   for(int i = 0; i < n; ++i) {
     if(p[i] < sm_cutoff) {
@@ -457,7 +457,7 @@ RcppGSL::Vector qlogspline(RcppGSL::Vector p, RcppGSL::Vector coefs, RcppGSL::Ve
   gsl_spline *spline = gsl_spline_alloc(gsl_interp_linear, len+1);
   int err = gsl_spline_init(spline, dcdf_val, dx_val, len+1);
   if(ISNAN(err)) {
-    printf("error = %s\n", gsl_strerror(err));
+    Rprintf("error = %s\n", gsl_strerror(err));
     Rcpp::stop("error in interpolation");
   }
 
@@ -466,8 +466,8 @@ RcppGSL::Vector qlogspline(RcppGSL::Vector p, RcppGSL::Vector coefs, RcppGSL::Ve
     double yi;
     int err = gsl_spline_eval_e(spline, (double)pm[i], acc, &yi);
     if(err != 0) {
-      printf("error = %s\n", gsl_strerror(err));
-      printf("\tinput = %g\n", (double)pm[i]);
+      Rprintf("error = %s\n", gsl_strerror(err));
+      Rprintf("\tinput = %g\n", (double)pm[i]);
       y[first_md+i] = 0.0;
     } else {
       y[first_md+i] = yi;
@@ -482,6 +482,15 @@ RcppGSL::Vector qlogspline(RcppGSL::Vector p, RcppGSL::Vector coefs, RcppGSL::Ve
 }
 
 
+//' Generate random draws according to the log spectral density
+//'
+//' @param n The number of draws
+//' @param coefs A vector of length \code{k} representing the basis coefficients
+//' @param knots A vector of length \code{k} representing the knot locations
+//' @param grid_size The size of the grid that the integral will be evaluated on
+//' @return A vector of length \code{n} of random draws from the log spectral density
+//' defined by \code{coefs} and \code{knots}
+//' @export
 // [[Rcpp::export]]
 RcppGSL::Vector rlogspline(int n, RcppGSL::Vector coefs, RcppGSL::Vector knots, double grid_size = 1e-2) {
   RcppGSL::Vector r(n);

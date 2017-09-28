@@ -1,0 +1,34 @@
+
+CUDA_HOME = /usr/local/cuda
+CXX = /usr/bin/g++
+
+#########################################
+
+R_INC = /usr/share/R/include
+RCPP_INC = /home/john/R/x86_64-pc-linux-gnu-library/3.4/Rcpp/include
+RCPPARMA_INC = /home/john/R/x86_64-pc-linux-gnu-library/3.4/RcppArmadillo/include
+
+NVCC = $(CUDA_HOME)/bin/nvcc
+CUDA_INC = $(CUDA_HOME)/include
+PKG_LIBS= -L$(CUDA_HOME)/lib64 -Wl,-rpath,$(CUDA_HOME)/lib64 -lcuda -lcudart -d  $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+
+NVCC_FLAGS = -x cu -Xcompiler "-fPIC" -gencode arch=compute_61,code=sm_61 -I$(R_INC)
+
+### Define objects
+cu_sources = mcCuda.cu
+cu_sharedlibs = mcCuda.o
+
+cpp_sources = mcCpp.cpp RcppExports.cpp
+cpp_sharedlibs = mcCpp.o RcppExports.o
+
+OBJECTS = $(cu_sharedlibs) $(cpp_sharedlibs)
+
+all : cudatest.so
+
+cudatest.so: $(OBJECTS)
+
+%.o: %.cpp $(cpp_sources)
+	$(CXX) $< -c -fPIC -I$(R_INC) -I$(RCPP_INC) -I$(RCPPARMA_INC)
+
+%.o: %.cu $(cu_sources)
+	$(NVCC) $(NVCC_FLAGS) -I$(CUDA_INC) $< -c
