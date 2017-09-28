@@ -7,32 +7,6 @@
 
 using namespace Rcpp;
 
-// d
-RcppGSL::Vector d(int k, RcppGSL::Vector X, RcppGSL::Vector knots);
-RcppExport SEXP _gpcovr_d(SEXP kSEXP, SEXP XSEXP, SEXP knotsSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type k(kSEXP);
-    Rcpp::traits::input_parameter< RcppGSL::Vector >::type X(XSEXP);
-    Rcpp::traits::input_parameter< RcppGSL::Vector >::type knots(knotsSEXP);
-    rcpp_result_gen = Rcpp::wrap(d(k, X, knots));
-    return rcpp_result_gen;
-END_RCPP
-}
-// H
-RcppGSL::Vector H(int i, RcppGSL::Vector X, RcppGSL::Vector knots);
-RcppExport SEXP _gpcovr_H(SEXP iSEXP, SEXP XSEXP, SEXP knotsSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type i(iSEXP);
-    Rcpp::traits::input_parameter< RcppGSL::Vector >::type X(XSEXP);
-    Rcpp::traits::input_parameter< RcppGSL::Vector >::type knots(knotsSEXP);
-    rcpp_result_gen = Rcpp::wrap(H(i, X, knots));
-    return rcpp_result_gen;
-END_RCPP
-}
 // nsbasis
 RcppGSL::Matrix nsbasis(RcppGSL::Vector X, RcppGSL::Vector knots);
 RcppExport SEXP _gpcovr_nsbasis(SEXP XSEXP, SEXP knotsSEXP) {
@@ -106,18 +80,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< RcppGSL::Vector >::type coefs(coefsSEXP);
     Rcpp::traits::input_parameter< RcppGSL::Vector >::type knots(knotsSEXP);
     rcpp_result_gen = Rcpp::wrap(dloglogspline(x, coefs, knots));
-    return rcpp_result_gen;
-END_RCPP
-}
-// get_slopes
-RcppGSL::Vector get_slopes(RcppGSL::Vector coefs, RcppGSL::Vector knots);
-RcppExport SEXP _gpcovr_get_slopes(SEXP coefsSEXP, SEXP knotsSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< RcppGSL::Vector >::type coefs(coefsSEXP);
-    Rcpp::traits::input_parameter< RcppGSL::Vector >::type knots(knotsSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_slopes(coefs, knots));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -206,15 +168,12 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_gpcovr_d", (DL_FUNC) &_gpcovr_d, 3},
-    {"_gpcovr_H", (DL_FUNC) &_gpcovr_H, 3},
     {"_gpcovr_nsbasis", (DL_FUNC) &_gpcovr_nsbasis, 2},
     {"_gpcovr_predict_natspl", (DL_FUNC) &_gpcovr_predict_natspl, 2},
     {"_gpcovr_dlogspline_unnorm", (DL_FUNC) &_gpcovr_dlogspline_unnorm, 3},
     {"_gpcovr_normalize_dlogspline", (DL_FUNC) &_gpcovr_normalize_dlogspline, 3},
     {"_gpcovr_dlogspline", (DL_FUNC) &_gpcovr_dlogspline, 3},
     {"_gpcovr_dloglogspline", (DL_FUNC) &_gpcovr_dloglogspline, 3},
-    {"_gpcovr_get_slopes", (DL_FUNC) &_gpcovr_get_slopes, 2},
     {"_gpcovr_get_slope_pts", (DL_FUNC) &_gpcovr_get_slope_pts, 2},
     {"_gpcovr_plogspline", (DL_FUNC) &_gpcovr_plogspline, 3},
     {"_gpcovr_qlogspline", (DL_FUNC) &_gpcovr_qlogspline, 4},
