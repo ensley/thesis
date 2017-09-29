@@ -5,19 +5,21 @@
 
 using namespace Rcpp;
 
-// rcpp_hello
-List rcpp_hello();
-RcppExport SEXP _gpumc_rcpp_hello() {
+// mc
+NumericVector mc(NumericVector x, NumericVector s);
+RcppExport SEXP _gpumc_mc(SEXP xSEXP, SEXP sSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_result_gen = Rcpp::wrap(rcpp_hello());
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type s(sSEXP);
+    rcpp_result_gen = Rcpp::wrap(mc(x, s));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_gpumc_rcpp_hello", (DL_FUNC) &_gpumc_rcpp_hello, 0},
+    {"_gpumc_mc", (DL_FUNC) &_gpumc_mc, 2},
     {NULL, NULL, 0}
 };
 

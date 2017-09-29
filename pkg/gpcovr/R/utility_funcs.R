@@ -224,7 +224,7 @@ generateGP <- function(n, nu, alpha, sigma, tau, mindist = 0.005) {
 #' @param sigma scale parameter
 #' @param tau nugget effect
 #' @param num_samps the number of MC samples to use. Ignored if \code{mc} is not null.
-#' @param mc_samps vector of MC samples. If \code{NULL}, generate them with calls to \code{\link{rmatern}} and \code{cudatest::mc}.
+#' @param mc_samps vector of MC samples. If \code{NULL}, generate them with calls to \code{\link{rmatern}} and \code{gpumc::mc}.
 #' @return the log likelihood.
 #' @export
 normal_ll <- function(x, h, nu, alpha, sigma, tau, num_samps, mc_samps = NULL)
@@ -234,7 +234,7 @@ normal_ll <- function(x, h, nu, alpha, sigma, tau, num_samps, mc_samps = NULL)
   if(is.null(mc_samps))
   {
     samps <- rmatern(num_samps, nu, alpha, sigma, 0.1)
-    mc_samps <- cudatest::mc(h[lower.tri(h)], samps)
+    mc_samps <- gpumc::mc(h[lower.tri(h)], samps)
   }
   covmat[lower.tri(covmat)] <- mc_samps
   covmat[upper.tri(covmat)] <- t(covmat)[upper.tri(covmat)]
@@ -302,7 +302,256 @@ get_error_bounds <- function(b, x, knots)
 #' @export
 get_cov_error_bounds <- function(b, x, knots)
 {
-  curves <- apply(b, 1, function(beta) cudatest::mc(x, exp(rlogspline(50000, beta, knots))))
+  curves <- apply(b, 1, function(beta) gpumc::mc(x, exp(rlogspline(50000, beta, knots))))
   quantiles <- t(apply(curves, 1, function(x) stats::quantile(x, c(0.025, 0.975))))
   quantiles
+}
+
+
+#' Create observation and prediction locations for simulating a Gaussian process
+#'
+#' Generates a \code{GPlocations} object, containing locations for both
+#' (non-gridded) observations and (gridded) predictions when the Gaussian
+#' process is simulated
+#'
+#' @param M The number of observation locations
+#' @param ngrid The prediction grid will be \code{ngrid} x \code{ngrid} over the
+#'   unit square.
+#' @param mindist The minimum possible distance between any two observations. If
+#'   two observations are too close together, it may cause numerical
+#'   instability.
+#'
+#' @return A \code{GPlocations} object containing the following:
+#'   \itemize{
+#'     \item \code{locs}: a data frame with three columns - \code{x} and \code{y}
+#'     are the coordinates of the locations, and \code{type} is a factor equal to
+#'     \code{obs} for an observation location and \code{pred} for a prediction
+#'     location.
+#'     \item \code{dist_obs}: an \code{M} x \code{M} matrix consisting of the
+#'     distances between the observation locations
+#'     \item \code{dist_pred}: an \code{ngrid} x \code{ngrid} matrix consisting
+#'     of the distances between the prediction locations
+#'     \item \code{mindist}: The \code{mindist} parameter for reference
+#'   }
+#' @export
+#'
+#' @examples
+#' locations <- create_locations(50, 20, mindist = 0.002)
+create_locations <- function(M, ngrid, mindist = 0.005) {
+  # create grid of prediction observations
+  xpred <- seq(0, 1, length = ngrid)
+  grid_pred <- expand.grid(x = xpred, y = xpred)
+  # create initial grid for non-gridded observations over unit square.
+  # points 3*mindist apart.
+  xobs <- seq(mindist, 1-mindist, by = 3*mindist)
+  grid_obs <- expand.grid(x = xobs, y = xobs)
+  # perturb grid points by no more than mindist in any direction
+  grid_obs <- grid_obs + stats::runif(2 * length(xobs) * length(xobs), -mindist, mindist)
+  # sample M of these points
+  grid_obs <- grid_obs[sample(nrow(grid_obs), size = M), ]
+  # concatenate these points and indicate whether they are prediction or
+  # observation locations
+  grid <- rbind(grid_obs, grid_pred)
+  h <- as.matrix(stats::dist(grid))
+  dimnames(h) <- NULL
+  grid$type <- factor(c(rep('obs', M), rep('pred', ngrid * ngrid)))
+  # split the distance matrix into prediction/observation locations only
+  h_obs <- h[grid$type == 'obs',grid$type == 'obs']
+  h_pred <- h[grid$type == 'pred',grid$type == 'pred']
+  # create output
+  out <- list(locs = grid, dist_obs = h_obs, dist_pred = h_pred, mindist = mindist)
+  class(out) <- 'GPlocations'
+  return(out)
+}
+
+
+#' Prepare the covariance model
+#'
+#' Creates the model (from the RandomFields package) and spectral density
+#' function for the specified covariance family.
+#'
+#' This gets called internally by \code{\link{simulate_gp}}.
+#'
+#' @param family The parametric family the covariance function will belong to
+#' @param params A vector of parameters for the covariance function. They must be
+#' \itemize{
+#'   \item \code{matern}: (nu, rho, sigma, nugget)
+#'   \item \code{dampedcos}: (lambda, theta, sigma, nugget)
+#' }
+#'
+#' @return A \code{GPmodel} object containing the following:
+#' \itemize{
+#'   \item \code{model}: The model, from the \code{RandomFields} package
+#'   \item \code{params}: The parameter vector
+#'   \item \code{specdens}: The spectral density function
+#' }
+#' @export
+#'
+#' @examples
+#' model <- prepare_model('matern', c(1.5, 0.2, 1, 0.01))
+prepare_model <- function(family, params) {
+  if (family == 'matern') {
+    names(params) <- c('nu', 'rho', 'sigma', 'nugget')
+    model <- RandomFields::RMhandcock(params['nu'], notinvnu = TRUE, scale = params['rho'], var = params['sigma']) +
+      RandomFields::RMnugget(var = params['nugget'])
+    specdens <- function(w) dmatern(w, nu = params['nu'], alpha = 1/params['rho'], sigma = params['sigma'])
+  } else if (family == 'dampedcos') {
+    names(params) <- c('lambda', 'theta', 'sigma', 'nugget')
+    model <- RandomFields::RMdampedcos(lambda = params['lambda'], scale = params['theta'], var = params['sigma']) +
+      RandomFields::RMnugget(var = params['nugget'])
+    integrand <- function(h, w) {
+      besselJ(h*w, 0) * h * RandomFields::RFcov(model, h)
+    }
+    specdens <- Vectorize(function(w) {
+      int <- stats::integrate(integrand, w = w, 0, Inf)$value
+      1/(2*pi) * int
+    }, vectorize.args = 'w')
+  } else {
+    stop('Family must be one of (matern, dampedcos)')
+  }
+
+  out <- list(model = model, params = params, specdens = specdens)
+  class(out) <- 'GPmodel'
+  return(out)
+}
+
+
+#' Simulate a Gaussian process
+#'
+#' @param locations A \code{GPlocations} object
+#' @param family The parametric family of the covariance function
+#' @param params The parameters for the covariance function
+#'
+#' @return A \code{GPsimulated} object. This consists of the locations object,
+#'   with additional subobjects: \itemize{ \item \code{m}: The \code{GPmodel}
+#'   object created by \code{\link{prepare_model}} \item \code{Y}: A vector of
+#'   observations. These correspond to ALL locations, observed and predicted.
+#'   Subset these according to \code{locations$locs$type}. }
+#' @export
+#'
+#' @examples
+#' locations <- create_locations(50, 20, mindist = 0.002)
+#' gp <- simulate_gp(locations, 'matern', c(1.5, 0.2, 1, 0.01))
+simulate_gp <- function(locations, family, params) {
+  RandomFields::RFoptions(spConform = FALSE)
+  locations$m <- prepare_model(family, params)
+  locations$Y <- as.vector(RandomFields::RFsimulate(locations$m$model, locations$locs$x, locations$locs$y))
+  class(locations) <- 'GPsimulated'
+  return(locations)
+}
+
+
+#' Plot a GPlocations object
+#'
+#' Plots both the prediction and observation locations.
+#'
+#' @param x A \code{GPlocations} object
+#' @param ... Additional parameters to \code{\link[graphics]{plot}}
+#'
+#'
+#' @export
+#'
+#' @examples
+#' locations <- create_locations(50, 20, mindist = 0.002)
+#' plot(locations)
+plot.GPlocations <- function(x, ...) {
+  pred_idx <- which(x$locs$type == 'pred')
+  grid_pred <- x$locs[pred_idx, ]
+  grid_obs <- x$locs[-pred_idx, ]
+  graphics::plot.default(grid_pred$x, grid_pred$y, col = 'grey', ...)
+  graphics::points(grid_obs$x, grid_obs$y, pch = 19)
+}
+
+#' Plot a GPsimulated object
+#'
+#' Plots the gridded prediction values using \code{\link[graphics]{image}}, and
+#' draws the observation values on top with points.
+#'
+#' @param x A \code{GPsimulated} object
+#' @param ... Not used
+#' @param bw \code{TRUE} if the plot should be generated in black and white. Defaults to \code{FALSE}.
+#'
+#' @export
+#'
+#' @examples
+#' locations <- create_locations(50, 20, mindist = 0.002)
+#' gp <- simulate_gp(locations, 'matern', c(1.5, 0.2, 1, 0.01))
+#' plot(gp)
+plot.GPsimulated <- function(x, ..., bw = FALSE) {
+  pred_idx <- which(x$locs$type == 'pred')
+  grid_pred <- x$locs[pred_idx, ]
+  grid_obs <- x$locs[-pred_idx, ]
+  Y_pred <- x$Y[pred_idx]
+  Y_obs <- x$Y[-pred_idx]
+  pal <- ifelse(bw, 'Greys', 'Blues')
+  graphics::image(unique(grid_pred$x),
+        unique(grid_pred$y),
+        matrix(Y_pred, nrow = length(unique(grid_pred$x)), byrow = T),
+        col = rev(RColorBrewer::brewer.pal(7, pal)),
+        xlab = '', ylab = '')
+  graphics::points(grid_obs$x, grid_obs$y, col = 'white', pch = 20)
+  graphics::points(grid_obs$x, grid_obs$y, col = 'black', pch = 1)
+}
+
+
+#' Calculate the approximate likelihood from the spline coefficients
+#'
+#' @param beta The spline coefficients. Vector of length \code{k}
+#' @param knots The knot locations. Vector of length \code{k}
+#' @param Y The observations. Vector of length \code{M}
+#' @param H The distance matrix between the observations. \code{M} x \code{M}
+#'   matrix
+#' @param B The number of random draws to take from the spline-approximated
+#'   spectral density
+#' @param nugget The nugget effect
+#' @param debug \code{TRUE} to print out debugging information. (This is
+#'   untested inside the \code{gpcovr} package. Best to leave this
+#'   \code{FALSE}.)
+#'
+#' @return The approximate log likelihood
+#' @export
+likelihood <- function(beta, knots, Y, H, B, nugget, debug) {
+  M <- length(Y)
+
+  slopes <- get_slopes(beta, knots)
+
+  if(debug) cat('slopes:', slopes, '\n')
+  if(slopes[2] >= 0 | slopes[1] <= 0) return(-Inf)
+  mineigen <- -Inf
+  cnt <- 0
+  while(mineigen < 0) {
+    cnt <- cnt + 1
+    if(cnt != 1) cat('Redrawing...\n')
+    if(cnt > 2) {
+      cat('Likelihood calculation failed. Returning -Inf\n')
+      return(-Inf)
+    }
+    # take random samples from spectral density
+    wtilde <- rlogspline(B, beta, knots)
+    if(any(is.infinite(exp(wtilde)))) return(-Inf)
+    if(debug) {
+      ### plot current density estimate
+      # dev.off()
+      graphics::par(mfrow = c(2,1))
+      x <- seq(-20, 5, length = 200)
+      graphics::plot(x, predict_natspl(nsbasis(x, knots), beta), type = 'l', ylim = c(-15, 5))
+      graphics::abline(v = knots, col = 'grey', lty = 2)
+      graphics::hist(wtilde, probability = T, breaks = 50)
+      graphics::lines(x, dlogspline(x, beta, knots))
+    }
+    # estimate covariance matrix via MC integration
+    Sigma <- diag(1 + nugget, nrow = M, ncol = M)
+    Sigma[lower.tri(Sigma)] <- gpumc::mc(H[lower.tri(H)], exp(wtilde))
+    Sigma[upper.tri(Sigma)] <- t(Sigma)[upper.tri(Sigma)]
+    mineigen <- min(eigen(Sigma, symmetric = TRUE, only.values = TRUE)$value)
+    if(debug) cat('min eigval is', mineigen, '\n')
+    rm(wtilde)
+  }
+  cholmat <- chol(Sigma)
+  logdet <- sum(log(diag(cholmat)))
+  quadform <- drop(crossprod(backsolve(cholmat, Y, transpose = TRUE)))
+  l <- -0.5 * (M * log(2*pi) + 2*logdet + quadform)
+  rm(Sigma, cholmat)
+  gc()
+  return(l)
 }

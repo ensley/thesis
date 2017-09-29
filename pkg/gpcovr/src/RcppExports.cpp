@@ -83,6 +83,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// get_slopes
+RcppGSL::Vector get_slopes(RcppGSL::Vector coefs, RcppGSL::Vector knots);
+RcppExport SEXP _gpcovr_get_slopes(SEXP coefsSEXP, SEXP knotsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< RcppGSL::Vector >::type coefs(coefsSEXP);
+    Rcpp::traits::input_parameter< RcppGSL::Vector >::type knots(knotsSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_slopes(coefs, knots));
+    return rcpp_result_gen;
+END_RCPP
+}
 // get_slope_pts
 RcppGSL::Vector get_slope_pts(RcppGSL::Vector coefs, RcppGSL::Vector knots);
 RcppExport SEXP _gpcovr_get_slope_pts(SEXP coefsSEXP, SEXP knotsSEXP) {
@@ -174,6 +186,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_gpcovr_normalize_dlogspline", (DL_FUNC) &_gpcovr_normalize_dlogspline, 3},
     {"_gpcovr_dlogspline", (DL_FUNC) &_gpcovr_dlogspline, 3},
     {"_gpcovr_dloglogspline", (DL_FUNC) &_gpcovr_dloglogspline, 3},
+    {"_gpcovr_get_slopes", (DL_FUNC) &_gpcovr_get_slopes, 2},
     {"_gpcovr_get_slope_pts", (DL_FUNC) &_gpcovr_get_slope_pts, 2},
     {"_gpcovr_plogspline", (DL_FUNC) &_gpcovr_plogspline, 3},
     {"_gpcovr_qlogspline", (DL_FUNC) &_gpcovr_qlogspline, 4},

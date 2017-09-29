@@ -1,13 +1,13 @@
 Package: gpcovr
 Type: Package
-Title: Nonparametric Estimation of 2D Gaussian Process 
+Title: Nonparametric Estimation of 2D Gaussian Processes
 Version: 0.1.0
 Authors@R: person('John', 'Ensley', email = 'johnensley17@gmail.com', role = c('aut', 'cre'))
 Description: Helper functions for nonparametrically estimating covariance functions of Gaussian processes.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
-Imports: Rcpp (>= 0.12.12), stats
+Imports: Rcpp (>= 0.12.12), stats, mvtnorm, RandomFields, graphics, RColorBrewer
 LinkingTo: Rcpp, RcppArmadillo, RcppGSL
 RoxygenNote: 6.0.1
-Suggests: testthat, cudatest
+Suggests: testthat, gpumc

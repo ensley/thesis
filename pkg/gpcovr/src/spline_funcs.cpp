@@ -246,6 +246,20 @@ RcppGSL::Vector dloglogspline(RcppGSL::Vector x, RcppGSL::Vector coefs, RcppGSL:
 }
 
 
+//' Get slopes beyond the knot boundaries
+//'
+//' @param coefs A vector of length \code{k} representing the basis coefficients.
+//' @param knots A vector of length \code{k} representing the knot locations.
+//' @return A vector of length 2 containing the following values:
+//' \enumerate{
+//'   \item \eqn{f(kmin) - f(kmin - 1)}
+//'   \item \eqn{f(kmax + 1) - f(kmax)}
+//' }
+//' where \code{kmin} and \code{kmax} are the minimum and maximum knots and
+//' \code{f} is the unnormalized log log density. The first value is the left
+//' tail slope and the second is the right tail slope.
+//' @export
+// [[Rcpp::export]]
 RcppGSL::Vector get_slopes(RcppGSL::Vector coefs, RcppGSL::Vector knots) {
   double kmin, kmax;
   gsl_vector_minmax(knots, &kmin, &kmax);

@@ -89,6 +89,23 @@ dloglogspline <- function(x, coefs, knots) {
     .Call('_gpcovr_dloglogspline', PACKAGE = 'gpcovr', x, coefs, knots)
 }
 
+#' Get slopes beyond the knot boundaries
+#'
+#' @param coefs A vector of length \code{k} representing the basis coefficients.
+#' @param knots A vector of length \code{k} representing the knot locations.
+#' @return A vector of length 2 containing the following values:
+#' \enumerate{
+#'   \item \eqn{f(kmin) - f(kmin - 1)}
+#'   \item \eqn{f(kmax + 1) - f(kmax)}
+#' }
+#' where \code{kmin} and \code{kmax} are the minimum and maximum knots and
+#' \code{f} is the unnormalized log log density. The first value is the left
+#' tail slope and the second is the right tail slope.
+#' @export
+get_slopes <- function(coefs, knots) {
+    .Call('_gpcovr_get_slopes', PACKAGE = 'gpcovr', coefs, knots)
+}
+
 #' Evaluate points beyond the knot boundaries
 #'
 #' Since we are using a natural spline basis, the fitted curve beyond the
