@@ -381,9 +381,12 @@ create_locations <- function(M, ngrid, mindist = 0.005) {
 #'
 #' @return A \code{GPmodel} object containing the following:
 #' \itemize{
+#'   \item \code{family}: The family
 #'   \item \code{model}: The model, from the \code{RandomFields} package
 #'   \item \code{params}: The parameter vector
 #'   \item \code{specdens}: The spectral density function
+#'   \item \code{logx}: Range of log frequency values over which
+#'     \code{specdens} seems to be well-defined
 #' }
 #' @export
 #'
@@ -395,6 +398,7 @@ prepare_model <- function(family, params) {
     model <- RandomFields::RMhandcock(params['nu'], notinvnu = TRUE, scale = params['rho'], var = params['sigma']) +
       RandomFields::RMnugget(var = params['nugget'])
     specdens <- function(w) dmatern(w, nu = params['nu'], alpha = 1/params['rho'], sigma = params['sigma'])
+    logx <- seq(-5, 5, length = 500)
   } else if (family == 'dampedcos') {
     names(params) <- c('lambda', 'theta', 'sigma', 'nugget')
     model <- RandomFields::RMdampedcos(lambda = params['lambda'], scale = params['theta'], var = params['sigma']) +
@@ -406,11 +410,16 @@ prepare_model <- function(family, params) {
       int <- stats::integrate(integrand, w = w, 0, Inf)$value
       1/(2*pi) * int
     }, vectorize.args = 'w')
+    logx <- seq(-5, 3, length = 500)
   } else {
     stop('Family must be one of (matern, dampedcos)')
   }
 
-  out <- list(model = model, params = params, specdens = specdens)
+  out <- list(family = family,
+              model = model,
+              params = params,
+              specdens = specdens,
+              logx = logx)
   class(out) <- 'GPmodel'
   return(out)
 }

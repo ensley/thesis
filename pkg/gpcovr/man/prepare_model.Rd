@@ -18,9 +18,12 @@ prepare_model(family, params)
 \value{
 A \code{GPmodel} object containing the following:
 \itemize{
+  \item \code{family}: The family
   \item \code{model}: The model, from the \code{RandomFields} package
   \item \code{params}: The parameter vector
   \item \code{specdens}: The spectral density function
+  \item \code{logx}: Range of log frequency values over which
+    \code{specdens} seems to be well-defined
 }
 }
 \description{

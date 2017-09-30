@@ -7,7 +7,7 @@ Description: Helper functions for nonparametrically estimating covariance functi
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
-Imports: Rcpp (>= 0.12.12), stats, mvtnorm, RandomFields, graphics, RColorBrewer
+Imports: Rcpp (>= 0.12.12), stats, mvtnorm, RandomFields, graphics, RColorBrewer, utils, coda
 LinkingTo: Rcpp, RcppArmadillo, RcppGSL
 RoxygenNote: 6.0.1
 Suggests: testthat, gpumc
