@@ -1,3 +1,7 @@
+#' @useDynLib gpcovr
+#' @importFrom Rcpp evalCpp
+NULL
+
 #' Bayesian spline fitting
 #'
 #' @param B the number of MCMC iterations
@@ -398,7 +402,7 @@ prepare_model <- function(family, params) {
     model <- RandomFields::RMhandcock(params['nu'], notinvnu = TRUE, scale = params['rho'], var = params['sigma']) +
       RandomFields::RMnugget(var = params['nugget'])
     specdens <- function(w) dmatern(w, nu = params['nu'], alpha = 1/params['rho'], sigma = params['sigma'])
-    logx <- seq(-5, 5, length = 500)
+    logx <- c(-5, 5)
   } else if (family == 'dampedcos') {
     names(params) <- c('lambda', 'theta', 'sigma', 'nugget')
     model <- RandomFields::RMdampedcos(lambda = params['lambda'], scale = params['theta'], var = params['sigma']) +
@@ -410,7 +414,7 @@ prepare_model <- function(family, params) {
       int <- stats::integrate(integrand, w = w, 0, Inf)$value
       1/(2*pi) * int
     }, vectorize.args = 'w')
-    logx <- seq(-5, 3, length = 500)
+    logx <- c(-5, 3)
   } else {
     stop('Family must be one of (matern, dampedcos)')
   }
@@ -524,8 +528,8 @@ likelihood <- function(beta, knots, Y, H, B, nugget, debug) {
 
   slopes <- get_slopes(beta, knots)
 
-  if(debug) cat('slopes:', slopes, '\n')
-  if(slopes[2] >= 0 | slopes[1] <= 0) return(-Inf)
+  cat('slopes:', slopes, '\n')
+  if(slopes[2] >= 0 || slopes[1] <= 0) return(-Inf)
   mineigen <- -Inf
   cnt <- 0
   while(mineigen < 0) {

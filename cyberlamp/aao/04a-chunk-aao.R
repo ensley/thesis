@@ -1,12 +1,12 @@
-#! /usr/bin --vanilla --default-packages=utils,openacc
+#! /usr/bin --vanilla --default-packages=utils,gpcovr
 
-library(openacc)
-source('01a-functions-aao.R')
+library(gpcovr)
 
 args <- commandArgs(TRUE)
 if(length(args) != 3) {
   stop("incorrect arguments")
 }
+
 filepath <- args[1]
 nbatch <- as.numeric(args[2])
 batchidx <- as.numeric(args[3])

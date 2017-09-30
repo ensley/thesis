@@ -1,8 +1,6 @@
-#! /usr/bin --vanilla --default-packages=utils,openacc
+#! /usr/bin --vanilla --default-packages=utils,gpcovr
 
-library(openacc)
-library(RandomFields, quietly = TRUE)
-source('01-functions.R')
+library(gpcovr)
 
 args <- commandArgs(TRUE)
 

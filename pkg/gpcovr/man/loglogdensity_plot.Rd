@@ -2,21 +2,28 @@
 % Please edit documentation in R/process_output.R
 \name{loglogdensity_plot}
 \alias{loglogdensity_plot}
-\title{Plot the log-log spectral density after estimation}
+\alias{logdensity_plot}
+\title{Plot the spectral density after estimation (log or log-log)}
 \usage{
-loglogdensity_plot(beta, gpModel, knots, show_knots = TRUE,
-  beta_true = NULL, beta_init = NULL, err_bounds = NULL)
+loglogdensity_plot(beta, knots, show_knots = TRUE, show_points = FALSE,
+  gpModel = NULL, beta_true = NULL, beta_init = NULL, err_bounds = NULL)
+
+logdensity_plot(beta, knots, show_knots = TRUE, show_points = FALSE,
+  gpModel = NULL, beta_true = NULL, beta_init = NULL, err_bounds = NULL)
 }
 \arguments{
 \item{beta}{A vector of spline coefficients (typically the final result from
 \code{\link{estbeta}})}
 
-\item{gpModel}{A \code{GPmodel} object}
-
 \item{knots}{The knot locations}
 
 \item{show_knots}{To hide the vertical dashed lines indicating where the
 knots are located, set this to FALSE. Defaults to TRUE}
+
+\item{show_points}{To show points along the true log-log spectral density,
+set this to TRUE. Defaults to FALSE.}
+
+\item{gpModel}{A \code{GPmodel} object}
 
 \item{beta_true}{The "true" spline coefficients}
 
@@ -25,11 +32,17 @@ knots are located, set this to FALSE. Defaults to TRUE}
 \item{err_bounds}{A 2-column matrix containing lower and upper error bounds}
 }
 \value{
-The \code{GPmodel} object, invisibly. Creates the plot as a side effect.
+The \code{GPmodel} object, invisibly. Creates the plot as a side
+  effect.
 }
 \description{
-Plot the log-log spectral density after estimation
+Plot the spectral density after estimation (log or log-log)
 }
 \details{
-All of \code{beta_true}, \code{beta_init}, and \code{err_bounds} are \code{NULL} by default. If any are not known or not desired on the final plot, leave them as \code{NULL}. Otherwise, explicitly provide them.
+All of \code{gpModel}, \code{beta_true}, \code{beta_init}, and \code{err_bounds} are
+  \code{NULL} by default. If any are not known or not desired on the final
+  plot, leave them as \code{NULL}. Otherwise, explicitly provide them.
+
+  If \code{show_points} is set to TRUE but \code{gpModel} is NULL,
+  \code{show_points} will get forced to FALSE.
 }

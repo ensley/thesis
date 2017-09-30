@@ -1,7 +1,6 @@
-#! /usr/bin --vanilla --default-packages=utils,openacc
+#! /usr/bin --vanilla --default-packages=utils,gpcovr
 
-library(openacc)
-source('01a-functions-aao.R')
+library(gpcovr)
 
 args <- commandArgs(TRUE)
 if(length(args) != 2) {
@@ -29,4 +28,5 @@ batch <- estbeta_initialize(file.path(filepath, 'allbetas.csv'),
                             r = 6,
                             eps = 1e-3,
                             args$nugget)
+
 saveRDS(batch, file.path(filepath, 'batch.rds'))

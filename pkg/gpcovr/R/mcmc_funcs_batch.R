@@ -56,7 +56,7 @@ estbeta_initialize <- function(filename, errname, nbatch, H, Y, B, init_beta, in
 
   for(i in 2:nbatch) {
     cat('\ni =', i, '\n')
-    if(i > 2) {
+    if(i >= 2) {
       # adaptive tuning
       gamma1 <- c0 / (i + k)^c1
       if(i == 2) {

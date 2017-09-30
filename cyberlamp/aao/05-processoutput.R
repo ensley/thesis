@@ -1,11 +1,7 @@
-#! /usr/bin --vanilla --default-packages=utils,openacc
+#! /usr/bin --vanilla --default-packages=utils,gpcovr
 
 
-library(openacc)
-library(RColorBrewer)
-library(RandomFields)
-source('01a-functions-aao.R')
-
+library(gpcovr)
 
 args <- commandArgs(TRUE)
 
