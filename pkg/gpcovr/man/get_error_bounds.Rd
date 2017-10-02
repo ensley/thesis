@@ -4,15 +4,21 @@
 \alias{get_error_bounds}
 \title{Calculate the error bounds for the log-log spectral density}
 \usage{
-get_error_bounds(b, x, knots)
+get_error_bounds(b, gp, knots, n = 500, thin = 0)
 }
 \arguments{
 \item{b}{A matrix in which each row is a vector of spline basis coefficients
 from the MCMC}
 
-\item{x}{A vector of x values to evaluate the error bounds over}
+\item{gp}{A \code{GPsimulated} object}
 
 \item{knots}{The knots used in the MCMC}
+
+\item{n}{The number of points to evaluate the error bounds at}
+
+\item{thin}{Thinning parameter for calculating error bounds. E.g. if
+\code{thin} = 1000, every 1000th sample will be used to find the bounds. If
+\code{thin} = 0, no thinning is done.}
 }
 \value{
 The 2.5% and 97.5% percentiles at each x value

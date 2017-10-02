@@ -1,0 +1,14 @@
+The data in this folder was generated with the following properties:
+
+Random seed set
+matern covariance function with parameters
+	nu = 1.5
+	rho = 0.1548
+	sigma = 1.0
+	nugget = 0.01
+MCMC parameters are as follows:
+	400 non-gridded observations simulated
+	50 x 50 grid of prediction points simulated
+	15 knots
+	50000 Monte Carlo samples
+	100 data sets generated

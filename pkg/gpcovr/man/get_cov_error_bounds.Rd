@@ -4,7 +4,7 @@
 \alias{get_cov_error_bounds}
 \title{Calculate the error bounds for the covariance function}
 \usage{
-get_cov_error_bounds(b, x, knots)
+get_cov_error_bounds(b, x, knots, thin = 0)
 }
 \arguments{
 \item{b}{A matrix in which each row is a vector of spline basis coefficients
@@ -13,16 +13,20 @@ from the MCMC}
 \item{x}{A vector of x values to evaluate the error bounds over}
 
 \item{knots}{The knots used in the MCMC}
+
+\item{thin}{Thinning parameter for calculating error bounds. E.g. if
+\code{thin} = 1000, every 1000th sample will be used to find the bounds. If
+\code{thin} = 0, no thinning is done.}
 }
 \value{
 The 2.5% and 97.5% percentiles at each x value
 }
 \description{
 WARNING: this uses the GPU Monte Carlo integration and will crash your
-computer if you do more than 1000 - 5000 coefficient vectors at a time.
-This is because R is stupid and doesn't free up memory when it needs to.
+computer if you do more than 1000 - 5000 coefficient vectors at a time. This
+is because R is stupid and doesn't free up memory when it needs to.
 }
 \details{
-TODO: make this take every 100th or so row from b and estimate the
-bounds that way.
+TODO: make this take every 100th or so row from b and estimate the bounds
+that way.
 }

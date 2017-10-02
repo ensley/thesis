@@ -13,7 +13,7 @@ logdensity_plot(beta, knots, show_knots = TRUE, show_points = FALSE,
 }
 \arguments{
 \item{beta}{A vector of spline coefficients (typically the final result from
-\code{\link{estbeta}})}
+\code{\link{estbeta_aao}} or \code{\link{estbeta_ooat}})}
 
 \item{knots}{The knot locations}
 

@@ -1,0 +1,14 @@
+The data in this folder was generated with the following properties:
+
+Random seed set
+dampedcos covariance function with parameters
+	lam = 1.0
+	theta = 0.8
+	sigma = 1.0
+	nugget = 0.01
+MCMC parameters are as follows:
+	400 non-gridded observations simulated
+	50 x 50 grid of prediction points simulated
+	15 knots
+	50000 Monte Carlo samples
+	100 data sets generated

@@ -11,7 +11,7 @@ covar_plot(h, beta, knots, gpModel = NULL, beta_true = NULL,
 \item{h}{The lag values to plot the covariance function over}
 
 \item{beta}{A vector of spline coefficients (typically the final result from
-\code{\link{estbeta}})}
+\code{\link{estbeta_aao}} or \code{\link{estbeta_ooat}})}
 
 \item{knots}{The knot locations}
 

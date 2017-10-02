@@ -174,6 +174,12 @@ matern_cor <- function(h, nu, alpha, sigma) {
 }
 
 
+bessel_cor <- function(h, nu, theta, sigma, nugget) {
+  out <- rep(sigma + nugget, length(h))
+  idx_non0 <- which(h != 0)
+  out[idx_non0] <- as.numeric(2^nu * gamma(nu + 1) * (h[idx_non0] / theta)^(-nu) * Bessel::BesselJ(h[idx_non0] / theta, nu))
+  out
+}
 
 
 #' Generate a Gaussian process
@@ -278,34 +284,48 @@ normal_ll_exact <- function(x, h, nu, alpha, sigma, tau)
 #'
 #' @param b A matrix in which each row is a vector of spline basis coefficients
 #' from the MCMC
-#' @param x A vector of x values to evaluate the error bounds over
+#' @param gp A \code{GPsimulated} object
 #' @param knots The knots used in the MCMC
+#' @param n The number of points to evaluate the error bounds at
+#' @param thin Thinning parameter for calculating error bounds. E.g. if
+#'   \code{thin} = 1000, every 1000th sample will be used to find the bounds. If
+#'   \code{thin} = 0, no thinning is done.
+#'
 #' @return The 2.5% and 97.5% percentiles at each x value
 #' @export
-get_error_bounds <- function(b, x, knots)
+get_error_bounds <- function(b, gp, knots, n = 500, thin = 0)
 {
+  x <- seq(gp$m$logx[1], gp$m$logx[2], length = n)
+  N <- nrow(b)
+  if (thin > 0) b <- b[round(seq(from = 1, to = N, length = thin)), ]
   curves <- apply(b, 1, function(beta) dloglogspline(x, beta, knots))
-  quantiles <- t(apply(curves, 1, function(x) stats::quantile(x, c(0.025, 0.975))))
+  quantiles <- t(apply(curves, 1, function(w) stats::quantile(w, c(0.025, 0.975))))
   quantiles
 }
 
 #' Calculate the error bounds for the covariance function
 #'
 #' WARNING: this uses the GPU Monte Carlo integration and will crash your
-#' computer if you do more than 1000 - 5000 coefficient vectors at a time.
-#' This is because R is stupid and doesn't free up memory when it needs to.
+#' computer if you do more than 1000 - 5000 coefficient vectors at a time. This
+#' is because R is stupid and doesn't free up memory when it needs to.
 #'
-#' TODO: make this take every 100th or so row from b and estimate the
-#' bounds that way.
+#' TODO: make this take every 100th or so row from b and estimate the bounds
+#' that way.
 #'
 #' @param b A matrix in which each row is a vector of spline basis coefficients
-#' from the MCMC
+#'   from the MCMC
 #' @param x A vector of x values to evaluate the error bounds over
 #' @param knots The knots used in the MCMC
+#' @param thin Thinning parameter for calculating error bounds. E.g. if
+#'   \code{thin} = 1000, every 1000th sample will be used to find the bounds. If
+#'   \code{thin} = 0, no thinning is done.
+#'
 #' @return The 2.5% and 97.5% percentiles at each x value
 #' @export
-get_cov_error_bounds <- function(b, x, knots)
+get_cov_error_bounds <- function(b, x, knots, thin = 0)
 {
+  N <- nrow(b)
+  if (thin > 0) b <- b[round(seq(from = 1, to = N, length = thin)), ]
   curves <- apply(b, 1, function(beta) gpumc::mc(x, exp(rlogspline(50000, beta, knots))))
   quantiles <- t(apply(curves, 1, function(x) stats::quantile(x, c(0.025, 0.975))))
   quantiles
@@ -389,6 +409,7 @@ create_locations <- function(M, ngrid, mindist = 0.005) {
 #'   \item \code{model}: The model, from the \code{RandomFields} package
 #'   \item \code{params}: The parameter vector
 #'   \item \code{specdens}: The spectral density function
+#'   \item \code{knotlocs}: Range of knots
 #'   \item \code{logx}: Range of log frequency values over which
 #'     \code{specdens} seems to be well-defined
 #' }
@@ -397,11 +418,13 @@ create_locations <- function(M, ngrid, mindist = 0.005) {
 #' @examples
 #' model <- prepare_model('matern', c(1.5, 0.2, 1, 0.01))
 prepare_model <- function(family, params) {
+  validmodels <- c('matern', 'dampedcos', 'bessel', 'sine')
   if (family == 'matern') {
     names(params) <- c('nu', 'rho', 'sigma', 'nugget')
     model <- RandomFields::RMhandcock(params['nu'], notinvnu = TRUE, scale = params['rho'], var = params['sigma']) +
       RandomFields::RMnugget(var = params['nugget'])
     specdens <- function(w) dmatern(w, nu = params['nu'], alpha = 1/params['rho'], sigma = params['sigma'])
+    knotlocs <- c(1, 4)
     logx <- c(-5, 5)
   } else if (family == 'dampedcos') {
     names(params) <- c('lambda', 'theta', 'sigma', 'nugget')
@@ -414,15 +437,42 @@ prepare_model <- function(family, params) {
       int <- stats::integrate(integrand, w = w, 0, Inf)$value
       1/(2*pi) * int
     }, vectorize.args = 'w')
+    knotlocs <- c(-1, 2)
     logx <- c(-5, 3)
+  # } else if (family == 'bessel') {
+  #   names(params) <- c('nu', 'theta', 'sigma', 'nugget')
+  #   model <- RandomFields::RMbessel(nu = params['nu'], scale = params['theta'], var = params['sigma']) +
+  #     RandomFields::RMnugget(var = params['nugget'])
+  #   integrand <- function(h, w) {
+  #     Bessel::BesselJ(h*w, 0) * h * bessel_cor(h, params['nu'], params['theta'], params['sigma'], params['nugget'])
+  #   }
+  #   specdens <- Vectorize(function(w) {
+  #     int <- stats::integrate(integrand, w = w, 0, Inf)$value
+  #     1/(2*pi) * int
+  #   }, vectorize.args = 'w')
+  #   logx <- c(-5, 3)
+  # } else if (family == 'wave') {
+  #   names(params) <- c('theta', 'sigma', 'nugget')
+  #   model <- RandomFields::RMwave(scale = params['theta'], var = params['sigma']) +
+  #     RandomFields::RMnugget(var = params['nugget'])
+  #   integrand <- function(h, w) {
+  #     Bessel::BesselJ(h*w, 0) * h * RandomFields::RFcov(model, h)
+  #   }
+  #   specdens <- Vectorize(function(w) {
+  #     int <- stats::integrate(integrand, w = w, 0, Inf)$value
+  #     1/(2*pi) * int
+  #   }, vectorize.args = 'w')
+  #   logx <- c(-5, 3)
   } else {
-    stop('Family must be one of (matern, dampedcos)')
+    str <- paste0(validmodels, collapse = ', ')
+    stop('Family must be one of ', str)
   }
 
   out <- list(family = family,
               model = model,
               params = params,
               specdens = specdens,
+              knotlocs = knotlocs,
               logx = logx)
   class(out) <- 'GPmodel'
   return(out)
@@ -499,7 +549,7 @@ plot.GPsimulated <- function(x, ..., bw = FALSE) {
   pal <- ifelse(bw, 'Greys', 'Blues')
   graphics::image(unique(grid_pred$x),
         unique(grid_pred$y),
-        matrix(Y_pred, nrow = length(unique(grid_pred$x)), byrow = T),
+        matrix(Y_pred, nrow = length(unique(grid_pred$x)), byrow = F),
         col = rev(RColorBrewer::brewer.pal(7, pal)),
         xlab = '', ylab = '')
   graphics::points(grid_obs$x, grid_obs$y, col = 'white', pch = 20)
