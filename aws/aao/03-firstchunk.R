@@ -3,16 +3,17 @@
 library(gpcovr)
 
 args <- commandArgs(TRUE)
-if(length(args) != 2) {
+if(length(args) != 3) {
   stop("incorrect arguments")
 }
 
 filepath <- args[1]
-nbatch <- as.numeric(args[2])
+outpath <- args[2]
+nbatch <- as.numeric(args[3])
 
-args <- readRDS(file.path(filepath, 'init_args.rds'))
+args <- readRDS(file.path(filepath))
 
-batch <- estbeta_ooat_initialize(file.path(filepath, 'allbetas.csv'),
+batch <- estbeta_aao_initialize(file.path(filepath, 'allbetas.csv'),
                             file.path(filepath, 'errbounds.csv'),
                             nbatch,
                             args$locations$dist_obs,
@@ -29,5 +30,5 @@ batch <- estbeta_ooat_initialize(file.path(filepath, 'allbetas.csv'),
                             eps = 1e-3,
                             args$nugget)
 
-saveRDS(batch, file.path(filepath, 'batch.rds'))
+saveRDS(batch, file.path(outpath, 'batch.rds'))
 

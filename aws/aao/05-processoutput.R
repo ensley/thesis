@@ -10,7 +10,6 @@ if (length(args) < 1) {
 }
 
 filepath <- args[1]
-
 setwd(filepath)
 args <- readRDS('init_args.rds')
 b <- read.csv('allbetas.csv', header = FALSE)

@@ -13,7 +13,7 @@ batchidx <- as.numeric(args[3])
 
 b <- readRDS(file.path(filepath, 'batch.rds'))
 
-batch <- estbeta_ooat(file.path(filepath, 'allbetas.csv'),
+batch <- estbeta_aao(file.path(filepath, 'allbetas.csv'),
                  file.path(filepath, 'errbounds.csv'),
                  nbatch,
                  batchidx,
