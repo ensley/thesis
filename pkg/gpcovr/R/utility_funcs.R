@@ -174,13 +174,6 @@ matern_cor <- function(h, nu, alpha, sigma) {
 }
 
 
-bessel_cor <- function(h, nu, theta, sigma, nugget) {
-  out <- rep(sigma + nugget, length(h))
-  idx_non0 <- which(h != 0)
-  out[idx_non0] <- as.numeric(2^nu * gamma(nu + 1) * (h[idx_non0] / theta)^(-nu) * Bessel::BesselJ(h[idx_non0] / theta, nu))
-  out
-}
-
 
 #' Generate a Gaussian process
 #'
