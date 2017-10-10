@@ -53,7 +53,7 @@ w <- round(seq(1, length(x), length = 50))
 xx <- logx[w]
 yy <- logy[w]
 spl <- nsbasis(xx, knots)
-
+cat('KNOT LOCATIONS: ', knots)
 
 
 cat('FINDING TRUE BETA VECTOR...')

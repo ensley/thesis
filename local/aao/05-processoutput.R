@@ -22,10 +22,9 @@ cov_err_bounds2 <- t(apply(cov_err_bounds, 2, function(x) stats::quantile(x, c(0
 
 
 N <- nrow(b)
-# burnin <- floor(0.2 * N)
-burnin <- 1
+burnin <- floor(0.5 * N)
 bf <- colMeans(tail(b, -burnin))
-apply(b, 2, function(x) mean(diff(x) != 0))
+apply(tail(b, -burnin), 2, function(x) mean(diff(x) != 0))
 
 
 
@@ -46,7 +45,7 @@ dev.off()
 # TRACE PLOT --------------------------------------------------------------
 
 pdf('trace.pdf')
-trace_plot(b, 4)
+trace_plot(tail(b, -burnin), 4)
 dev.off()
 
 ### END TRACE PLOT

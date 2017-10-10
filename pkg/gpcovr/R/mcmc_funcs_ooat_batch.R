@@ -33,6 +33,8 @@
 #' @export
 #'
 estbeta_ooat_initialize <- function(filename, errname, nbatch, H, Y, B, init_beta, init_tau, knots, v_beta, v_tau, t_v, r.opt = 0.23, r = 5, eps = 1e-3, nugget = 1e-3, errthin = 100) {
+  if (file.exists(filename)) file.remove(filename)
+  if (file.exists(errname)) file.remove(errname)
   filecon <- file(filename, 'a+')
   errcon <- file(errname, 'a+')
   # define constants
@@ -126,7 +128,7 @@ estbeta_ooat_initialize <- function(filename, errname, nbatch, H, Y, B, init_bet
     tau_samps[i] <- tau
 
     # write information out to files
-    write(beta_samps[i, , drop = FALSE], filecon, ncolumns = K, append = T, sep = ',')
+    write(beta_samps[i, , drop = FALSE], file = filecon, ncolumns = K, append = T, sep = ',')
 
     if (i %% errthin == 0) {
       # get covariance function error bounds for this set of betas and write it out
@@ -284,7 +286,7 @@ estbeta_ooat <- function(filename, errname, nbatch, batchidx, H, Y, B, last_few_
     tau_samps[i+r] <- tau
 
     # write information out to files
-    write(beta_samps[i+r, , drop = FALSE], ncolumns = K, filecon, append = T, sep = ',')
+    write(beta_samps[i+r, , drop = FALSE], file = filecon, ncolumns = K, append = T, sep = ',')
 
     if (i %% errthin == 0) {
       # get covariance function error bounds for this set of betas

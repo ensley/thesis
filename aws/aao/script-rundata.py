@@ -75,12 +75,12 @@ gmail_user = 'johnensley17@gmail.com'
 gmail_password = 'KiphGuzv0@Jehi'
 
 for i in range(idx_start, idx_end+1):
-    file = os.path.join(fileinpath, 'init_args_' + str(i) + '.rds')
+    filename = 'init_args_' + str(i) + '.rds'
     curoutpath = os.path.join(fileoutpath, 'dataset' + str(i).zfill(3))
     os.makedirs(curoutpath)
     starttime = datetime.now()
-    subprocess.call(['Rscript', '03-firstchunk.R', file, curoutpath, str(100)])
-    for j in range(1, N+1):
+    subprocess.call(['Rscript', '03-firstchunk.R', fileinpath, filename, curoutpath, str(100)])
+    for j in range(1, N):
         subprocess.call(['Rscript', '04-chunk.R', curoutpath, str(100), str(j)])
-    subprocess.call(['Rscript', '05-processoutput.R', curoutpath])
+    subprocess.call(['Rscript', '05-processoutput.R', fileinpath, filename, curoutpath])
     sendEmail(starttime, gmail_user, gmail_password, 'johnensley17@gmail.com', 'johnensley17@gmail.com', i, idx_start, idx_end)

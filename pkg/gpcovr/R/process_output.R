@@ -53,6 +53,7 @@ loglogdensity_plot <- function(beta, knots, show_knots = TRUE, show_points = FAL
 
     spl <- nsbasis(logx, knots)
     pts <- if (!is.null(beta_true)) yy - log(normalize_dlogspline(spl, beta_true, knots)) else NULL
+    # pts <- yy
   } else {
     show_points <- FALSE
     logx <- seq(-5, 5, length = seq_length)

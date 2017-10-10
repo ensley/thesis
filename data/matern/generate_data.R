@@ -35,8 +35,8 @@ cat('DONE.\n')
 
 
 
-knots <- seq(-1, 2, length = K)
-x <- exp(seq(-5, 3, length = 500))
+knots <- seq(gp$m$knotlocs[1], gp$m$knotlocs[2], length = K)
+x <- exp(seq(gp$m$logx[1], gp$m$logx[2], length = 500))
 y <- gp$m$specdens(x)
 logx <- log(x)
 logy <- logx + log(y)

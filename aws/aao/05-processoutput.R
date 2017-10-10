@@ -5,17 +5,20 @@ library(gpcovr)
 
 args <- commandArgs(TRUE)
 
-if (length(args) < 1) {
+if (length(args) < 3) {
   stop('Not enough arguments to 05a')
 }
 
-filepath <- args[1]
-setwd(filepath)
-args <- readRDS('init_args.rds')
-b <- read.csv('allbetas.csv', header = FALSE)
+fileinpath <- args[1]
+fileinname <- args[2]
+outpath <- args[3]
+
+setwd(outpath)
+args <- readRDS(file.path(fileinpath, fileinname))
+b <- read.csv(file.path(outpath, 'allbetas.csv'), header = FALSE)
 x <- seq(1e-5, 5, length = 500)
 err_bounds <- get_error_bounds(b, args$gp, args$knots, thin = 1000)
-cov_err_bounds <- read.csv('errbounds.csv', header = FALSE)
+cov_err_bounds <- read.csv(file.path(outpath, 'errbounds.csv'), header = FALSE)
 cov_err_bounds2 <- t(apply(cov_err_bounds, 2, function(x) stats::quantile(x, c(0.025, 0.975))))
 
 

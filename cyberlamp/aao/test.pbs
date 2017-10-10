@@ -1,0 +1,5 @@
+#PBS -S /bin/bash
+#PBS -A cyberlamp
+
+cd $PBS_O_WORKDIR
+echo "hello"

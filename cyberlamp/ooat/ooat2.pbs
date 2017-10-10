@@ -1,0 +1,14 @@
+#!/bin/bash -login
+
+#PBS -A cyberlamp
+#PBS -l qos=cl_gpu
+#PBS -m abe
+#PBS -M ensley@psu.edu
+#PBS -l walltime=168:00:00
+#PBS -l nodes=1:ppn=1:gpus=1:shared
+#PBS -l mem=8gb
+
+module purge
+module load r/3.4 python/3.3
+cd ~/work/thesis/ooat
+python3 script-rundata.py 1000 1 99 ~/work/thesis/data/matern/ ~/work/thesis/results/matern/ooat/

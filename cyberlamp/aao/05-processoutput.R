@@ -5,19 +5,23 @@ library(gpcovr)
 
 args <- commandArgs(TRUE)
 
-if (length(args) < 2) {
+if (length(args) < 3) {
   stop('Not enough arguments to 05a')
 }
 
-filepath <- args[1]
-family <- args[2]
+fileinpath <- args[1]
+fileinname <- args[2]
+outpath <- args[3]
 
-setwd(filepath)
+setwd(outpath)
+args <- readRDS(file.path(fileinpath, fileinname))
+b <- read.csv(file.path(outpath, 'allbetas.csv'), header = FALSE)
+x <- seq(1e-5, 5, length = 500)
+err_bounds <- get_error_bounds(b, args$gp, args$knots, thin = 1000)
+cov_err_bounds <- read.csv(file.path(outpath, 'errbounds.csv'), header = FALSE)
+cov_err_bounds2 <- t(apply(cov_err_bounds, 2, function(x) stats::quantile(x, c(0.025, 0.975))))
 
-plot.new()
 
-args <- readRDS('init_args.rds')
-b <- read.csv('allbetas.csv', header = FALSE)
 N <- nrow(b)
 # burnin <- floor(0.2 * N)
 burnin <- 1
@@ -25,144 +29,102 @@ bf <- colMeans(tail(b, -burnin))
 apply(b, 2, function(x) mean(diff(x) != 0))
 
 
+
+
+
+
+# LOCATIONS PLOT ----------------------------------------------------------
+
+pdf('locations.pdf')
 plot(args$gp)
+dev.off()
+
+### END LOCATIONS PLOT
+
+
+
+
+# TRACE PLOT --------------------------------------------------------------
 
 pdf('trace.pdf')
-bmcmc <- coda::mcmc(b)
-plot(bmcmc[ ,1:4])
-plot(bmcmc[ ,2:5])
+trace_plot(b, 4)
 dev.off()
 
-logx <- log(args$x)
-logy <- logx + log(args$y)
-w <- round(seq(1, length(args$x), length = 50))
-xx <- logx[w]
-yy <- logy[w]
-
-spl <- nsbasis(logx, args$knots)
-plot(logx, predict_natspl(nsbasis(logx, args$knots), bf), type = 'l')
-lines(logx, predict_natspl(nsbasis(logx, args$knots), args$beta_true), col = 'blue')
-legend('topleft', c('final estimate', '"Truth"'), col = c('black', 'blue'), lty = 1)
-abline(v = args$knots, lty = 3, col = 'grey')
-
-plot(logx, dloglogspline(logx, bf, args$knots), type = 'l')
-lines(logx, dloglogspline(logx, args$beta_true, args$knots), col = 'blue')
-legend('topleft', c('final estimate', '"Truth"'), col = c('black', 'blue'), lty = 1)
-abline(v = args$knots, lty = 3, col = 'grey')
+### END TRACE PLOT
 
 
-plot(logx, dlogspline(logx, args$beta_true, args$knots), type = 'l', col = 'blue')
-lines(logx, dlogspline(logx, bf, args$knots))
-legend('topleft', c('final estimate', '"Truth"'), col = c('black', 'blue'), lty = 1)
-abline(v = args$knots, lty = 3, col = 'grey')
 
 
-err_bounds <- get_error_bounds(tail(b, -burnin), logx, args$knots)
-hgrid <- seq(1e-5, 5, length = 500)
-cov_curves <- read.csv('errbounds.csv', header = FALSE)
-cov_err_bounds <- apply(cov_curves, 2, function(co) quantile(co, c(0.025, 0.975)))
-
+# LOG-LOG DENSITY PLOT ----------------------------------------------------
 
 pdf('loglogdensity.pdf')
-pts <- yy - log(normalize_dlogspline(nsbasis(logx, args$knots), args$beta_true, args$knots))
-l1 <- dloglogspline(logx, args$beta_true, args$knots)
-l2 <- dloglogspline(logx, bf, args$knots)
-l3 <- dloglogspline(logx, args$beta_init, args$knots)
-plot_ymin <- min(c(min(pts), min(err_bounds[ ,1]), min(err_bounds[ ,2]), min(l1), min(l2), min(l3)))
-plot_ymax <- max(c(max(pts), max(err_bounds[ ,1]), max(err_bounds[ ,2]), max(l1), max(l2), max(l3)))
-plot(range(logx), c(plot_ymin, plot_ymax), type = 'n',
-        xlab = expression(paste(log, ' ', omega)),
-        ylab = expression(paste(log, ' f(', log, ' ', omega, ')')),
-        main = 'log-log density')
-polygon(c(logx, rev(logx)), c(err_bounds[ ,1], rev(err_bounds[ ,2])), col = 'grey90', border = NA)
-points(xx, pts, pch = 20, cex = 1.5, col = 'grey50')
-lines(logx, l1, lwd = 2)
-lines(logx, l2, col = 'blue', lwd = 2)
-lines(logx, l3, lty = 2, lwd = 2, col = 'orange')
-abline(v = args$knots, col = 'grey', lty = 3)
-legend('topleft',
-       c('true points', 'closest fit', 'estimated', 'initial'),
-       col = c('grey50', 'black', 'blue', 'orange'),
-       lty = c(NA, 1, 1, 2),
-       lwd = c(NA, 2, 2, 2),
-       pch = c(16, NA, NA, NA))
+loglogdensity_plot(bf,
+                   args$knots,
+                   show_knots = TRUE,
+                   show_points = TRUE,
+                   gpModel = args$gp$m,
+                   beta_true = args$beta_true,
+                   beta_init = args$beta_init,
+                   err_bounds = err_bounds)
 dev.off()
 
+### END LOG-LOG DENSITY PLOT
 
+
+
+# LOG DENSITY PLOT --------------------------------------------------------
 
 pdf('logdensity.pdf')
-pts <- exp(yy)/normalize_dlogspline(nsbasis(logx, args$knots), args$beta_true, args$knots)
-l1 <- dlogspline(logx, args$beta_true, args$knots)
-l2 <- dlogspline(logx, bf, args$knots)
-l3 <- dlogspline(logx, args$beta_init, args$knots)
-plot_ymin <- min(c(min(pts), min(exp(err_bounds[ ,1])), min(exp(err_bounds[ ,2])), min(l1), min(l2), min(l3)))
-plot_ymax <- max(c(max(pts), max(exp(err_bounds[ ,1])), max(exp(err_bounds[ ,2])), max(l1), max(l2), max(l3)))
-plot(range(logx), c(plot_ymin, plot_ymax), type = 'n',
-        xlab = expression(paste(log, ' ', omega)),
-        ylab = expression(paste(' f(', log, ' ', omega, ')')),
-        main = 'log density')
-polygon(c(logx, rev(logx)), exp(c(err_bounds[ ,1], rev(err_bounds[ ,2]))), col = 'grey90', border = NA)
-points(xx, exp(yy)/normalize_dlogspline(nsbasis(logx, args$knots), args$beta_true, args$knots), pch = 20, cex = 1.5, col = 'grey50')
-lines(logx, dlogspline(logx, args$beta_true, args$knots), lwd = 2)
-lines(logx, dlogspline(logx, bf, args$knots), col = 'blue', lwd = 2)
-lines(logx, dlogspline(logx, args$beta_init, args$knots), lty = 2, lwd = 2, col = 'orange')
-abline(v = args$knots, col = 'grey', lty = 3)
-legend('topleft',
-       c('true points', 'closest fit', 'estimated', 'initial'),
-       col = c('grey50', 'black', 'blue', 'orange'),
-       lty = c(NA, 1, 1, 2),
-       lwd = c(NA, 2, 2, 2),
-       pch = c(16, NA, NA, NA))
+logdensity_plot(bf,
+                args$knots,
+                show_knots = TRUE,
+                show_points = TRUE,
+                gpModel = args$gp$m,
+                beta_true = args$beta_true,
+                err_bounds = err_bounds)
 dev.off()
 
-pdf('covar.pdf')
-l1 <- cudatest::mc(hgrid, exp(rlogspline(50000, args$beta_true, args$knots)))
-l2 <- cudatest::mc(hgrid, exp(rlogspline(50000, bf, args$knots)))
-l3 <- RFcov(args$gp$m$model, hgrid)
-plot_ymin <- min(c(min(cov_err_bounds[1, ]), min(cov_err_bounds[2, ]), min(l1), min(l2), min(l3)))
-plot_ymax <- max(c(max(cov_err_bounds[1, ]), max(cov_err_bounds[2, ]), max(l1), max(l2), min(l3)))
-plot(range(hgrid), c(plot_ymin, plot_ymax), type = 'n',
-        xlab = 'h',
-        ylab = 'C(h)',
-        main = 'Covariance function')
-polygon(c(hgrid, rev(hgrid)), c(cov_err_bounds[1, ], rev(cov_err_bounds[2, ])), col = 'grey90', border = NA)
-lines(hgrid, l3, lwd = 2)
-# lines(model_sim - RMnugget(var = 0.01), xlim = c(0, 5), lwd = 2)
-lines(hgrid, l2, col = 'blue', lwd = 2)
-abline(h = 0, lty = 3)
-legend('topright',
-       c('true', 'estimated'),
-       col = c('black', 'blue'),
-       lwd = 2)
+### END LOG DENSITY PLOT
+
+
+
+# COVARIANCE PLOT ---------------------------------------------------------
+
+pdf('covariance.pdf')
+covar_plot(x,
+           bf,
+           args$knots,
+           gpModel = args$gp$m,
+           beta_true = args$beta_true,
+           err_bounds = cov_err_bounds2)
 dev.off()
 
-#####
+### END COVARIANCE PLOT
 
 
 
-grid <- args$locations$locs
-grid_pred <- grid[grid$type == 'pred',1:2]
-grid_obs <- grid[grid$type == 'obs',1:2]
-dist <- as.matrix(dist(grid[ ,1:2]))[grid$type == 'pred',grid$type == 'obs']
-gamma1 <- matrix(cudatest::mc(dist, exp(rlogspline(50000, bf, args$knots))), nrow = length(args$gp$Y[grid$type == 'pred']))
-G <- matrix(cudatest::mc(args$locations$dist_obs, exp(rlogspline(50000, bf, args$knots))), nrow = length(args$gp$Y[grid$type == 'obs']))
-Ginv <- solve(G)
 
-pred_ests <- drop(gamma1 %*% Ginv %*% args$gp$Y[grid$type == 'obs'])
-mse <- mean((pred_ests - args$gp$Y[grid$type == 'pred'])^2)
+# FIT BEST MATERN ---------------------------------------------------------
 
+fit <- fit_matern(args$gp, 5000)
 
+# COMPUTE PREDICTIONS -----------------------------------------------------
 
-# gamma1_best <- matrix(matern_cor(dist, 1.5, 4.76, 1), nrow = length(args$Ypred))
-# G_best <- matrix(matern_cor(args$hobs, 1.5, 4.76, 1), nrow = length(args$Yobs))
-gamma1_best <- matrix(RFcov(args$gp$m$model, as.numeric(dist)), nrow = length(args$gp$Y[grid$type == 'pred']))
-G_best <- matrix(RFcov(args$gp$m$model, as.numeric(args$locations$dist_obs)), nrow = length(args$gp$Y[grid$type == 'obs']))
-# diag(G_best) <- diag(G_best) + 0.01
-Ginv_best <- solve(G_best)
+preds <- data.frame(actual = args$gp$Y[args$gp$locs$type == 'pred'],
+                    spline = predict(args$gp, beta = bf, knots = args$knots),
+                    bestmatern = othermodel_predict(args$gp, fit$model),
+                    optimal = optimal_predict(args$gp))
 
-pred_best <- drop(gamma1_best %*% Ginv_best %*% args$gp$Y[grid$type == 'obs'])
-mse_best <- mean((pred_best - args$gp$Y[grid$type == 'pred'])^2)
+write.csv(preds, 'preds.csv')
 
-( incr <- mse / mse_best - 1 )
+# COMPUTE MSE -------------------------------------------------------------
 
-write(incr, file = 'mse_perc_incr.txt')
+mse_spline <- mse(preds$spline, preds$actual)
+mse_bestmatern <- mse(preds$bestmatern, preds$actual)
+mse_optimal <- mse(preds$optimal, preds$actual)
+
+# PLOT PREDICTIONS --------------------------------------------------------
+
+pdf('pairs.pdf')
+pairs(preds, pch = 20, cex = 0.5)
+dev.off()
