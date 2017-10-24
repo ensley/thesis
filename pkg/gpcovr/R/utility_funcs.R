@@ -382,6 +382,61 @@ create_locations <- function(M, ngrid, mindist = 0.005) {
 }
 
 
+#' Create observation and prediction locations for simulating a Gaussian process
+#'
+#' Generates a \code{GPlocations} object. This is an altered version of
+#' \code{\link{create_locations}}, in which the observations are restricted to
+#' fall outside of (1/3, 2/3) x (1/3, 2/3) and the prediction points are
+#' specified in an argument. The prediction points should be limited to the
+#' square that the observation points have been withheld from.
+#'
+#' @param M The number of observation locations
+#' @param grid_pred A data frame with two columns, \code{x} and \code{y}, that
+#'   contains the prediction points
+#' @param mindist The minimum possible distance between any two observations. If
+#'   two observations are too close together, it may cause numerical
+#'   instability.
+#'
+#' @return A \code{GPlocations} object containing the following: \itemize{ \item
+#'   \code{locs}: a data frame with three columns - \code{x} and \code{y} are
+#'   the coordinates of the locations, and \code{type} is a factor equal to
+#'   \code{obs} for an observation location and \code{pred} for a prediction
+#'   location. \item \code{dist_obs}: an \code{M} x \code{M} matrix consisting
+#'   of the distances between the observation locations \item \code{dist_pred}:
+#'   an \code{nrow(grid_pred)} x \code{nrow(grid_pred)} matrix consisting of the
+#'   distances between the prediction locations \item \code{mindist}: The
+#'   \code{mindist} parameter for reference }
+#' @export
+#'
+#' @examples
+#' locations <- create_locations2(50, data.frame(x = 0.5, y = 0.5), mindist = 0.002)
+create_locations2 <- function(M, grid_pred, mindist = 0.005) {
+  # create initial grid for non-gridded observations over unit square.
+  # points 3*mindist apart.
+  xobs <- seq(mindist, 1-mindist, by = 3*mindist)
+  grid_obs <- expand.grid(x = xobs, y = xobs)
+  # get rid of points in center
+  grid_obs <- grid_obs[!(grid_obs$x > 1/3 & grid_obs$x < 2/3 & grid_obs$y > 1/3 & grid_obs$y < 2/3), ]
+  # perturb grid points by no more than mindist in any direction
+  grid_obs <- grid_obs + stats::runif(2 * length(xobs) * length(xobs), -mindist, mindist)
+  # sample M of these points
+  grid_obs <- grid_obs[sample(nrow(grid_obs), size = M), ]
+  # concatenate these points and indicate whether they are prediction or
+  # observation locations
+  grid <- rbind(grid_obs, grid_pred)
+  h <- as.matrix(stats::dist(grid))
+  dimnames(h) <- NULL
+  grid$type <- factor(c(rep('obs', M), rep('pred', nrow(grid_pred))))
+  # split the distance matrix into prediction/observation locations only
+  h_obs <- h[grid$type == 'obs',grid$type == 'obs']
+  h_pred <- h[grid$type == 'pred',grid$type == 'pred']
+  # create output
+  out <- list(locs = grid, dist_obs = h_obs, dist_pred = h_pred, mindist = mindist)
+  class(out) <- 'GPlocations'
+  return(out)
+}
+
+
 #' Prepare the covariance model
 #'
 #' Creates the model (from the RandomFields package) and spectral density
@@ -514,7 +569,8 @@ plot.GPlocations <- function(x, ...) {
   pred_idx <- which(x$locs$type == 'pred')
   grid_pred <- x$locs[pred_idx, ]
   grid_obs <- x$locs[-pred_idx, ]
-  graphics::plot.default(grid_pred$x, grid_pred$y, col = 'grey', ...)
+  graphics::plot.default(c(0, 1), c(0, 1), type = 'n', ...)
+  graphics::points(grid_pred$x, grid_pred$y, col = 'grey')
   graphics::points(grid_obs$x, grid_obs$y, pch = 19)
 }
 
@@ -540,11 +596,12 @@ plot.GPsimulated <- function(x, ..., bw = FALSE) {
   Y_pred <- x$Y[pred_idx]
   Y_obs <- x$Y[-pred_idx]
   pal <- ifelse(bw, 'Greys', 'Blues')
+  graphics::plot.default(c(0, 1), c(0, 1), type = 'n', ...)
   graphics::image(unique(grid_pred$x),
         unique(grid_pred$y),
         matrix(Y_pred, nrow = length(unique(grid_pred$x)), byrow = F),
         col = rev(RColorBrewer::brewer.pal(7, pal)),
-        xlab = '', ylab = '')
+        xlab = '', ylab = '', add = TRUE)
   graphics::points(grid_obs$x, grid_obs$y, col = 'white', pch = 20)
   graphics::points(grid_obs$x, grid_obs$y, col = 'black', pch = 1)
 }
@@ -607,6 +664,73 @@ likelihood <- function(beta, knots, Y, H, B, nugget, debug) {
   logdet <- sum(log(diag(cholmat)))
   quadform <- drop(crossprod(backsolve(cholmat, Y, transpose = TRUE)))
   l <- -0.5 * (M * log(2*pi) + 2*logdet + quadform)
+  rm(Sigma, cholmat)
+  gc()
+  return(l)
+}
+
+
+#' Calculate the approximate likelihood from the spline coefficients
+#'
+#' @param beta The spline coefficients. Vector of length \code{k}
+#' @param knots The knot locations. Vector of length \code{k}
+#' @param Y The observations. Matrix with \code{M} rows and as many columns as
+#'   there are replications.
+#' @param H The distance matrix between the observations. \code{M} x \code{M}
+#'   matrix
+#' @param B The number of random draws to take from the spline-approximated
+#'   spectral density
+#' @param nugget The nugget effect
+#' @param debug \code{TRUE} to print out debugging information. (This is
+#'   untested inside the \code{gpcovr} package. Best to leave this
+#'   \code{FALSE}.)
+#'
+#' @return The approximate log likelihood
+#' @export
+likelihood2 <- function(beta, knots, Y, H, B, nugget, debug) {
+  M <- nrow(Y)
+
+  slopes <- get_slopes(beta, knots)
+
+  cat('slopes:', slopes, '\n')
+  if(slopes[2] >= 0 || slopes[1] <= 0) return(-Inf)
+  mineigen <- -Inf
+  cnt <- 0
+  while(mineigen < 0) {
+    cnt <- cnt + 1
+    if(cnt != 1) cat('Redrawing...\n')
+    if(cnt > 2) {
+      cat('Likelihood calculation failed. Returning -Inf\n')
+      return(-Inf)
+    }
+    # take random samples from spectral density
+    wtilde <- rlogspline(B, beta, knots)
+    if(any(is.infinite(exp(wtilde)))) return(-Inf)
+    if(debug) {
+      ### plot current density estimate
+      # dev.off()
+      graphics::par(mfrow = c(2,1))
+      x <- seq(-20, 5, length = 200)
+      graphics::plot(x, predict_natspl(nsbasis(x, knots), beta), type = 'l', ylim = c(-15, 5))
+      graphics::abline(v = knots, col = 'grey', lty = 2)
+      graphics::hist(wtilde, probability = T, breaks = 50)
+      graphics::lines(x, dlogspline(x, beta, knots))
+    }
+    # estimate covariance matrix via MC integration
+    Sigma <- diag(1 + nugget, nrow = M, ncol = M)
+    Sigma[lower.tri(Sigma)] <- gpumc::mc(H[lower.tri(H)], exp(wtilde))
+    Sigma[upper.tri(Sigma)] <- t(Sigma)[upper.tri(Sigma)]
+    mineigen <- min(eigen(Sigma, symmetric = TRUE, only.values = TRUE)$value)
+    if(debug) cat('min eigval is', mineigen, '\n')
+    rm(wtilde)
+  }
+  cholmat <- chol(Sigma)
+  logdet <- sum(log(diag(cholmat)))
+  l <- 0
+  for (i in 1:ncol(Y)) {
+    quadform <- drop(crossprod(backsolve(cholmat, Y[ ,i], transpose = TRUE)))
+    l <- l + -0.5 * (M * log(2*pi) + 2*logdet + quadform)
+  }
   rm(Sigma, cholmat)
   gc()
   return(l)
