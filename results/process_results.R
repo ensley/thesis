@@ -1,5 +1,6 @@
 library(tidyverse)
-directory <- '~/git/thesis/results'
+library(stringr)
+directory <- '~/Documents/git/thesis/results'
 
 files <- list.files(directory, pattern = "\\preds.csv$", recursive = TRUE, full.names = TRUE)
 dfs <- lapply(files, function(f) {
@@ -14,9 +15,9 @@ dfs <- lapply(files, function(f) {
              )
            )
   matches <- str_split(f, '/')[[1]]
-  df$cov <- matches[7]
-  df$method <- matches[8]
-  df$dataset <- matches[9]
+  df$cov <- matches[8]
+  df$method <- matches[9]
+  df$dataset <- matches[10]
   df
 })
 allpreds <- bind_rows(dfs, .id = 'id')
@@ -43,9 +44,9 @@ mse_rel %>%
   select(-optimal) %>% 
   gather(type, mse, spline, bestmatern, hall) %>% 
   filter(method == 'aao', mse <= 100) %>% 
-  ggplot(aes(type, mse)) +
+  ggplot(aes(type, log(mse))) +
   geom_boxplot() +
-  geom_hline(yintercept = 1, color = 'grey') +
+  geom_hline(yintercept = 0, color = 'grey') +
   facet_grid(cov ~ .) +
   coord_flip() +
   ggthemes::theme_few()

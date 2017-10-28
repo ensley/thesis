@@ -2,6 +2,9 @@ library(tidyverse)
 library(ggthemes)
 theme_set(theme_few())
 
+width = 12
+height = 7
+
 
 # HELPER FUNCTIONS --------------------------------------------------------
 
@@ -93,7 +96,7 @@ integrals %>%
   coord_flip() +
   facet_grid(family ~ .) +
   labs(title = '')
-ggsave(file.path(directory, 'plots/boxplot_integrals.pdf'))
+ggsave(file.path(directory, 'plots/boxplot_integrals.pdf'), width = width, height = height)
 
 # true covariance vs estimates, one dataset
 cov1 %>% 
@@ -106,7 +109,51 @@ cov1 %>%
        subtitle = 'Damped cosine, dataset 001',
        x = 'h',
        y = 'C(h)')
-ggsave(file.path(directory, 'plots/true_vs_est_one.pdf'))
+ggsave(file.path(directory, 'plots/true_vs_est_one.pdf'), width = width, height = height)
+
+
+cov %>% 
+  filter(family == 'matern') %>%
+  gather(method, value, starts_with('cov_')) %>% 
+  ggplot(aes(h, value)) +
+  geom_line(aes(group = interaction(id, method), color = method, size = method, alpha = method)) +
+  scale_color_manual(name = '', values = c('#F15A60', '#7AC36A', 'black')) +
+  scale_size_manual(name = '', values = c(0.5, 0.5, 1.2)) +
+  scale_alpha_manual(name = '', values = c(0.3, 0.3, 1)) +
+  labs(title = 'True vs Estimated Covariance Function',
+       subtitle = '100 Matern datasets',
+       x = 'h',
+       y = 'C(h)')
+ggsave(file.path(directory, 'plots/true_vs_est_matern.pdf'), width = width, height = height)
+
+cov %>% 
+  filter(family == 'dampedcos') %>%
+  gather(method, value, starts_with('cov_')) %>% 
+  ggplot(aes(h, value)) +
+  geom_line(aes(group = interaction(id, method), color = method, size = method, alpha = method)) +
+  scale_color_manual(name = '', values = c('#F15A60', '#7AC36A', 'black')) +
+  scale_size_manual(name = '', values = c(0.5, 0.5, 1.2)) +
+  scale_alpha_manual(name = '', values = c(0.3, 0.3, 1)) +
+  labs(title = 'True vs Estimated Covariance Function',
+       subtitle = '100 damped cosine datasets',
+       x = 'h',
+       y = 'C(h)')
+ggsave(file.path(directory, 'plots/true_vs_est_dampedos.pdf'), width = width, height = height)
+
+
+cov %>% 
+  gather(method, value, starts_with('cov_')) %>% 
+  ggplot(aes(h, value)) +
+  geom_line(aes(group = interaction(id, method), color = method, size = method, alpha = method)) +
+  facet_grid(family ~ .) +
+  scale_color_manual(name = '', values = c('#F15A60', '#7AC36A', 'black')) +
+  scale_size_manual(name = '', values = c(0.5, 0.5, 1.2)) +
+  scale_alpha_manual(name = '', values = c(0.3, 0.3, 1)) +
+  labs(title = 'True vs Estimated Covariance Function',
+       subtitle = '100 datasets for each of Matern and damped cosine',
+       x = 'h',
+       y = 'C(h)')
+ggsave(file.path(directory, 'plots/true_vs_est_all.pdf'), width = width, height = height)
 
 
 # squared differences, one dataset
@@ -121,7 +168,7 @@ cov1 %>%
        subtitle = 'Damped cosine, dataset 001',
        x = 'h',
        y = 'C(h)')
-ggsave(file.path(directory, 'plots/sqdiff_one.pdf'))
+ggsave(file.path(directory, 'plots/sqdiff_one.pdf'), width = width, height = height)
 
 
 # squared differences, all datasets (with mean)
@@ -135,6 +182,6 @@ diffs %>%
        subtitle = 'Comparing spline method to the best-fitting Matern model',
        x = 'h',
        y = 'C(h)')
-ggsave(file.path(directory, 'plots/sqdiff.pdf'))
+ggsave(file.path(directory, 'plots/sqdiff.pdf'), width = width, height = height)
 
   
