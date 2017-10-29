@@ -1,6 +1,6 @@
 library(tidyverse)
 library(ggthemes)
-theme_set(theme_few())
+theme_set(theme_few(base_size = 18))
 
 width = 12
 height = 7
@@ -40,7 +40,7 @@ lblr <- function(value) {
 # FIND CSV FILES ----------------------------------------------------------
 
 
-directory <- '~/git/thesis/results'
+directory <- '~/Documents/git/thesis/results'
 files <- list.files(directory, pattern = 'covariance.csv$', recursive = TRUE, full.names = TRUE)
 
 
@@ -57,7 +57,7 @@ cov <- map_dfr(files, function(f) {
     cov_hall_norm = col_skip()
   ))
   matches <- stringr::str_split(f, '/')[[1]]
-  df$family <- matches[7]
+  df$family <- matches[8]
   df
 }, .id = 'id')
 
@@ -97,18 +97,26 @@ integrals %>%
   ggplot(aes(type, integral)) +
   geom_boxplot() +
   coord_flip() +
-  facet_grid(family ~ .) +
-  labs(title = '')
+  facet_grid(family ~ ., labeller = as_labeller(lblr)) +
+  scale_x_discrete(labels = c('Best Matern', 'Hall', 'Spline')) +
+  labs(title = 'IMSE by covariance family and method',
+       y = 'IMSE',
+       x = 'Method')
 ggsave(file.path(directory, 'plots/boxplot_integrals.pdf'), width = width, height = height)
 
 # true covariance vs estimates, one dataset
 cov1 %>% 
   gather(method, value, starts_with('cov_')) %>%
   ggplot(aes(h, value, group = method)) +
+  geom_hline(yintercept = 0, size = 0.6, color = 'gray80') +
   geom_line(aes(color = method, linetype = method), size = 1) +
-  scale_color_manual(name = '', values = c(few_pal()(n_covs), 'gray')) +
-  scale_linetype_manual(name = '', values = c(rep('solid', n_covs), 'dashed')) +
-  labs(title = 'True vs Estimated Covariance Function',
+  scale_color_manual(name = '',
+                     values = c(few_pal()(n_covs), 'gray'),
+                     labels = c('Best Matern', 'Hall', 'Spline', 'True')) +
+  scale_linetype_manual(name = '',
+                        values = c(rep('solid', n_covs), 'dashed'),
+                        labels = c('Best Matern', 'Hall', 'Spline', 'True')) +
+  labs(title = 'True vs Estimated Covariance Functions',
        subtitle = 'Damped cosine, dataset 001',
        x = 'h',
        y = 'C(h)')
@@ -120,10 +128,10 @@ cov %>%
   gather(method, value, starts_with('cov_')) %>% 
   ggplot(aes(h, value)) +
   geom_line(aes(group = interaction(id, method), color = method, size = method, alpha = method)) +
-  scale_color_manual(name = '', values = c(few_pal()(n_covs), 'black')) +
-  scale_size_manual(name = '', values = c(rep(0.5, n_covs), 1.2)) +
-  scale_alpha_manual(name = '', values = c(rep(0.3, n_covs), 1)) +
-  labs(title = 'True vs Estimated Covariance Function',
+  scale_color_manual(name = '', values = c(few_pal()(n_covs), 'black'), labels = c('Best Matern', 'Hall', 'Spline', 'True')) +
+  scale_size_manual(name = '', values = c(rep(0.5, n_covs), 1.2), labels = c('Best Matern', 'Hall', 'Spline', 'True')) +
+  scale_alpha_manual(name = '', values = c(rep(0.3, n_covs), 1), labels = c('Best Matern', 'Hall', 'Spline', 'True')) +
+  labs(title = 'True vs Estimated Covariance Functions',
        subtitle = '100 Matern datasets',
        x = 'h',
        y = 'C(h)')
@@ -134,10 +142,10 @@ cov %>%
   gather(method, value, starts_with('cov_')) %>% 
   ggplot(aes(h, value)) +
   geom_line(aes(group = interaction(id, method), color = method, size = method, alpha = method)) +
-  scale_color_manual(name = '', values = c(few_pal()(n_covs), 'black')) +
-  scale_size_manual(name = '', values = c(rep(0.5, n_covs), 1.2)) +
-  scale_alpha_manual(name = '', values = c(rep(0.3, n_covs), 1)) +
-  labs(title = 'True vs Estimated Covariance Function',
+  scale_color_manual(name = '', values = c(few_pal()(n_covs), 'black'), labels = c('Best Matern', 'Hall', 'Spline', 'True')) +
+  scale_size_manual(name = '', values = c(rep(0.5, n_covs), 1.2), labels = c('Best Matern', 'Hall', 'Spline', 'True')) +
+  scale_alpha_manual(name = '', values = c(rep(0.3, n_covs), 1), labels = c('Best Matern', 'Hall', 'Spline', 'True')) +
+  labs(title = 'True vs Estimated Covariance Functions',
        subtitle = '100 damped cosine datasets',
        x = 'h',
        y = 'C(h)')
@@ -148,12 +156,12 @@ cov %>%
   gather(method, value, starts_with('cov_')) %>% 
   ggplot(aes(h, value)) +
   geom_line(aes(group = interaction(id, method), color = method, size = method, alpha = method)) +
-  facet_grid(family ~ .) +
-  scale_color_manual(name = '', values = c(few_pal()(n_covs), 'black')) +
-  scale_size_manual(name = '', values = c(rep(0.5, n_covs), 1.2)) +
-  scale_alpha_manual(name = '', values = c(rep(0.3, n_covs), 1)) +
-  labs(title = 'True vs Estimated Covariance Function',
-       subtitle = '100 datasets for each of Matern and damped cosine',
+  facet_grid(. ~ family, labeller = as_labeller(lblr)) +
+  scale_color_manual(name = '', values = c(few_pal()(n_covs), 'black'), labels = c('Best Matern', 'Hall', 'Spline', 'True')) +
+  scale_size_manual(name = '', values = c(rep(0.5, n_covs), 1.2), labels = c('Best Matern', 'Hall', 'Spline', 'True')) +
+  scale_alpha_manual(name = '', values = c(rep(0.3, n_covs), 1), labels = c('Best Matern', 'Hall', 'Spline', 'True')) +
+  labs(title = 'True vs Estimated Covariance Functions',
+       subtitle = '200 datasets',
        x = 'h',
        y = 'C(h)')
 ggsave(file.path(directory, 'plots/true_vs_est_all.pdf'), width = width, height = height)
@@ -165,11 +173,11 @@ diffs %>%
   gather(method, value, starts_with('cov_')) %>% 
   ggplot(aes(h, value)) +
   geom_line(size = 1) +
-  facet_grid(method ~ family, labeller = as_labeller(lblr)) +
+  facet_grid(. ~ method, labeller = as_labeller(lblr)) +
   labs(title = 'Squared difference between true and estimated C(h)',
        subtitle = 'Damped cosine, dataset 001',
        x = 'h',
-       y = 'C(h)')
+       y = 'Squared difference')
 ggsave(file.path(directory, 'plots/sqdiff_one.pdf'), width = width, height = height)
 
 
@@ -183,7 +191,7 @@ diffs %>%
   labs(title = 'Squared difference between true and estimated C(h)',
        subtitle = 'Comparing spline method to the best-fitting Matern model',
        x = 'h',
-       y = 'C(h)')
+       y = 'Squared difference')
 ggsave(file.path(directory, 'plots/sqdiff.pdf'), width = width, height = height)
 
   
