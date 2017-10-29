@@ -26,8 +26,12 @@ integrate_trap <- function(x, y) {
 # labeller function for facet_grid
 lblr <- function(value) {
   name <- list(
-    'bestdiff' = 'Best fit Matern',
-    'splinediff' = 'Spline fit'
+    'cov_bestmatern' = 'Best fit Matern',
+    'cov_spline' = 'Spline fit',
+    'cov_hall' = 'Hall method',
+    'cov_hall_norm' = 'Hall method\n(normalized)',
+    'matern' = 'Matern',
+    'dampedcos' = 'Damped cosine'
   )
   name[value]
 }
@@ -36,7 +40,7 @@ lblr <- function(value) {
 # FIND CSV FILES ----------------------------------------------------------
 
 
-directory <- '~/Documents/git/thesis/results'
+directory <- '~/git/thesis/results'
 files <- list.files(directory, pattern = 'covariance.csv$', recursive = TRUE, full.names = TRUE)
 
 
@@ -48,42 +52,41 @@ cov <- map_dfr(files, function(f) {
     h = col_double(),
     cov_true = col_double(),
     cov_spline = col_double(),
-    cov_bestmatern = col_double()
+    cov_bestmatern = col_double(),
+    cov_hall = col_double(),
+    cov_hall_norm = col_skip()
   ))
   matches <- stringr::str_split(f, '/')[[1]]
-  df$family <- matches[8]
+  df$family <- matches[7]
   df
 }, .id = 'id')
 
+n_covs <- 3
 
 # CREATE VARIOUS DATA FRAMES AND CALCULATE INTEGRALS ----------------------
 
 
 # cov with differences included
 diffs <- cov %>% 
-  mutate(id = as.numeric(id)) %>% 
-  group_by(family, id) %>% 
-  mutate(splinediff = (cov_true - cov_spline)^2,
-         bestdiff = (cov_true - cov_bestmatern)^2)
+  mutate(id = as.numeric(id)) %>%
+  mutate_at(vars(starts_with('cov_'), -cov_true), funs((cov_true - .)^2)) %>% 
+  select(-cov_true)
 
 # just integral values with id and family
 integrals <- diffs %>% 
-  summarise(spline = integrate_trap(h, splinediff),
-            bestmatern = integrate_trap(h, bestdiff)) %>% 
-  gather(type, integral, spline:bestmatern)
+  group_by(family, id) %>% 
+  summarise_at(vars(starts_with('cov_')), funs(integrate_trap(h, .))) %>% 
+  gather(type, integral, -(family:id))
 
 # first run (damped cosine, dataset001)
 cov1 <- cov %>% 
   filter(id == 1)
 
 # contains mean difference functions (for plot)
-cov_meandiff <- cov %>% 
-  mutate(splinediff = (cov_true - cov_spline)^2,
-         bestdiff = (cov_true - cov_bestmatern)^2) %>% 
-  group_by(h) %>% 
-  summarise(splinediff = mean(splinediff),
-            bestdiff = mean(bestdiff)) %>% 
-  gather(method, value, ends_with('diff'))
+cov_meandiff <- diffs %>% 
+  group_by(family, h) %>%
+  summarise_at(vars(starts_with('cov_')), mean) %>% 
+  gather(method, value, starts_with('cov_'))
 
 
 # PLOTS -------------------------------------------------------------------
@@ -103,8 +106,8 @@ cov1 %>%
   gather(method, value, starts_with('cov_')) %>%
   ggplot(aes(h, value, group = method)) +
   geom_line(aes(color = method, linetype = method), size = 1) +
-  scale_color_manual(name = '', values = c('#F15A60', '#7AC36A', 'gray')) +
-  scale_linetype_manual(name = '', values = c('solid', 'solid', 'dashed')) +
+  scale_color_manual(name = '', values = c(few_pal()(n_covs), 'gray')) +
+  scale_linetype_manual(name = '', values = c(rep('solid', n_covs), 'dashed')) +
   labs(title = 'True vs Estimated Covariance Function',
        subtitle = 'Damped cosine, dataset 001',
        x = 'h',
@@ -117,9 +120,9 @@ cov %>%
   gather(method, value, starts_with('cov_')) %>% 
   ggplot(aes(h, value)) +
   geom_line(aes(group = interaction(id, method), color = method, size = method, alpha = method)) +
-  scale_color_manual(name = '', values = c('#F15A60', '#7AC36A', 'black')) +
-  scale_size_manual(name = '', values = c(0.5, 0.5, 1.2)) +
-  scale_alpha_manual(name = '', values = c(0.3, 0.3, 1)) +
+  scale_color_manual(name = '', values = c(few_pal()(n_covs), 'black')) +
+  scale_size_manual(name = '', values = c(rep(0.5, n_covs), 1.2)) +
+  scale_alpha_manual(name = '', values = c(rep(0.3, n_covs), 1)) +
   labs(title = 'True vs Estimated Covariance Function',
        subtitle = '100 Matern datasets',
        x = 'h',
@@ -131,14 +134,14 @@ cov %>%
   gather(method, value, starts_with('cov_')) %>% 
   ggplot(aes(h, value)) +
   geom_line(aes(group = interaction(id, method), color = method, size = method, alpha = method)) +
-  scale_color_manual(name = '', values = c('#F15A60', '#7AC36A', 'black')) +
-  scale_size_manual(name = '', values = c(0.5, 0.5, 1.2)) +
-  scale_alpha_manual(name = '', values = c(0.3, 0.3, 1)) +
+  scale_color_manual(name = '', values = c(few_pal()(n_covs), 'black')) +
+  scale_size_manual(name = '', values = c(rep(0.5, n_covs), 1.2)) +
+  scale_alpha_manual(name = '', values = c(rep(0.3, n_covs), 1)) +
   labs(title = 'True vs Estimated Covariance Function',
        subtitle = '100 damped cosine datasets',
        x = 'h',
        y = 'C(h)')
-ggsave(file.path(directory, 'plots/true_vs_est_dampedos.pdf'), width = width, height = height)
+ggsave(file.path(directory, 'plots/true_vs_est_dampedcos.pdf'), width = width, height = height)
 
 
 cov %>% 
@@ -146,9 +149,9 @@ cov %>%
   ggplot(aes(h, value)) +
   geom_line(aes(group = interaction(id, method), color = method, size = method, alpha = method)) +
   facet_grid(family ~ .) +
-  scale_color_manual(name = '', values = c('#F15A60', '#7AC36A', 'black')) +
-  scale_size_manual(name = '', values = c(0.5, 0.5, 1.2)) +
-  scale_alpha_manual(name = '', values = c(0.3, 0.3, 1)) +
+  scale_color_manual(name = '', values = c(few_pal()(n_covs), 'black')) +
+  scale_size_manual(name = '', values = c(rep(0.5, n_covs), 1.2)) +
+  scale_alpha_manual(name = '', values = c(rep(0.3, n_covs), 1)) +
   labs(title = 'True vs Estimated Covariance Function',
        subtitle = '100 datasets for each of Matern and damped cosine',
        x = 'h',
@@ -157,13 +160,12 @@ ggsave(file.path(directory, 'plots/true_vs_est_all.pdf'), width = width, height 
 
 
 # squared differences, one dataset
-cov1 %>% 
-  mutate(splinediff = (cov_true - cov_spline)^2,
-         bestdiff = (cov_true - cov_bestmatern)^2) %>% 
-  gather(method, value, ends_with('diff')) %>% 
+diffs %>% 
+  filter(id == 1) %>% 
+  gather(method, value, starts_with('cov_')) %>% 
   ggplot(aes(h, value)) +
   geom_line(size = 1) +
-  facet_grid(method ~ ., labeller = as_labeller(lblr)) +
+  facet_grid(method ~ family, labeller = as_labeller(lblr)) +
   labs(title = 'Squared difference between true and estimated C(h)',
        subtitle = 'Damped cosine, dataset 001',
        x = 'h',
@@ -173,11 +175,11 @@ ggsave(file.path(directory, 'plots/sqdiff_one.pdf'), width = width, height = hei
 
 # squared differences, all datasets (with mean)
 diffs %>% 
-  gather(method, value, ends_with('diff')) %>% 
+  gather(method, value, starts_with('cov_')) %>% 
   ggplot(aes(h, value, group = id)) +
   geom_line(color = 'gray60', alpha = 0.5) +
   geom_line(data = cov_meandiff, aes(h, value, group = method), size = 1) +
-  facet_grid(method ~ ., labeller = as_labeller(lblr)) +
+  facet_grid(family ~ method, labeller = as_labeller(lblr)) +
   labs(title = 'Squared difference between true and estimated C(h)',
        subtitle = 'Comparing spline method to the best-fitting Matern model',
        x = 'h',
