@@ -4,7 +4,7 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, cache = TRUE, fig.height = 7, fig.width = 12)
+knitr::opts_chunk$set(echo = FALSE, cache = TRUE, fig.height = 7, fig.width = 12)
 library(tidyverse)
 library(ggthemes)
 theme_set(theme_few(base_size = 18))
@@ -44,7 +44,7 @@ lblr <- function(value) {
 ## Read files
 
 ```{r}
-directory <- '~/Documents/git/thesis/results'
+directory <- '~/git/thesis/results'
 files <- list.files(directory, pattern = 'covariance.csv$', recursive = TRUE, full.names = TRUE)
 
 cov <- map_dfr(files, function(f) {
@@ -57,7 +57,7 @@ cov <- map_dfr(files, function(f) {
     cov_hall_norm = col_skip()
   ))
   matches <- stringr::str_split(f, '/')[[1]]
-  df$family <- matches[8]
+  df$family <- matches[7]
   df
 }, .id = 'id')
 
@@ -219,5 +219,37 @@ diffs %>%
        subtitle = 'Comparing spline method to the best-fitting Matern model',
        x = 'h',
        y = 'Squared difference')
+```
+
+### Runtime of exact covariance calculation vs MC approximation
+
+```{r}
+timings <- read_csv('~/git/thesis/results/timings_mc.csv', 
+                    col_names = TRUE, 
+                    col_types = cols(
+  tic = col_double(),
+  toc = col_double(),
+  method = col_character(),
+  size = col_integer(),
+  elapsed = col_double()
+))
+names(timings) <- c('tic', 'toc', 'method', 'size', 'elapsed')
+
+timings %>% 
+  group_by(method, size) %>% 
+  summarise(elapsed_avg = median(elapsed),
+            elapsed_min = quantile(elapsed, 0.25),
+            elapsed_max = quantile(elapsed, 0.75)) %>% 
+  ggplot(aes(size, elapsed_avg, color = method)) +
+  geom_point(size = 2) +
+  geom_line(size = 1) +
+  geom_errorbar(aes(ymin = elapsed_min, ymax = elapsed_max), width = 0.1) +
+  scale_x_log10() +
+  scale_y_log10(breaks = c(0.01, 0.1, 1, 10, 100),
+                labels = prettyNum) +
+  scale_color_few() +
+  labs(title = 'Runtime of Exact Covariance Calculation vs MC Approximation',
+       x = 'Number of observations',
+       y = 'Elapsed time (s)')
 ```
 
