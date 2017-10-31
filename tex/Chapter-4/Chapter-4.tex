@@ -1,0 +1,18 @@
+\chapter{Data Application} \label{chapter4:Data-Application}
+
+This project presents a method for estimating the covariance function of a stationary isotropic Gaussian process that does not rely on choosing a parametric family that may or may not fit the data well. It allows the data alone to drive the estimation, yet still guarantees that the estimated covariance function will turn out to be positive definite.
+
+Estimating the covariance matrix element by element is an extremely computationally intensive problem, and one that would scale quite poorly if it were executed sequentially. However, this issue is largely alleviated through the use of parallel computing on a GPU. For a moderately sized problem (here $n = 400$), the GPU approach results in a speedup of roughly $100\times$.
+
+In Figure~\ref{fig:result}, the estimated spectral density appears to match the true $f(\omega)$ fairly well in the right tail, for $\log \omega > 2$ or so, but does poorly in the left tail. Currently I am still trying to explain why this happens. One theory is that there simply isn't enough data at frequencies very close to zero to obtain a good estimate in this range. It is encouraging, however, that the approximation is good in the right tail. Often, our goal is to get an accurate estimate of how the covariance decays as the spatial distance increases.
+
+\section{Future Work} % (fold)
+\label{sec:future_work}
+
+This project is still a work in progress. As mentioned in Section~\ref{sec:calculating_the_likelihood}, I am working on a formal proof that the estimated likelihood converges to the true likelihood. In addition, I believe the performance of Algorithm~\ref{alg:mcmc} could be improved. The results in Figure~\ref{fig:result} are disappointing, but I think it could be more accurate with better proposal distributions and/or better knot placement. It could use more tinkering.
+
+The overall speed could be improved as well. Currently the MCMC algorithm runs in R, and invokes a CUDA C function to perform the Monte Carlo integrations. Translating all of the code into C/C++ would improve the performance even further. In particular, there is a matrix inversion via Cholesky decomposition in the likelihood calculation. It's possible to implement that in parallel on a GPU as well, which would allow $n$ to be larger than $400$ without harming performance too much.
+
+Finally, we would like to be able to relax the assumptions on the Gaussian process. We still need stationarity, but it should be a straighforward extension to eliminate the need to assume the process is isotropic.
+
+% subsection future_work (end)

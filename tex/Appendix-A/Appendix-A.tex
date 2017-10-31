@@ -1,0 +1,125 @@
+\Appendix{Theorems and Proofs}
+\label{app:theorems_and_proofs}
+
+\begin{lemma} \label{lem:meanconcave}
+  Let $f$ be a real-valued function that is continuous on $[a, b]$, differentiable on $(a, b)$, and concave over $(a, b)$. Then
+  \[
+    f(x) - f(\xi) \leq f'(\xi) (x - \xi) \qquad \forall \xi \in (a, b).
+  \]
+\end{lemma}
+
+\begin{proof}
+  \textsc{Case 1.} Suppose $x > \xi$. By the mean value theorem, there exists some $\eta \in (\xi, x)$ such that
+  \[
+    f'(\eta) = \frac{f(x) - f(\xi)}{x - \xi}.
+  \]
+  Since $f$ is concave, $f'$ is a decreasing function. Therefore $f'(\eta) \leq f'(\xi)$, and so
+  \[
+    f(x) - f(\xi) \leq f'(\xi) (x - \xi).
+  \]
+  \textsc{Case 2.} Suppose $x < \xi$. By the mean value theorem, there exists some $\eta \in (x, \xi)$ such that
+  \[
+    f'(\eta) = \frac{f(\xi) - f(x)}{\xi - x}.
+  \]
+  Since $f$ is concave, $f'$ is a decreasing function. Therefore $f'(\eta) \geq f'(\xi)$, and so
+  \begin{align*}
+    f(\xi) - f(x) &\geq f'(\xi) (\xi - x) \\
+    f(x) - f(\xi) &\leq f'(\xi) (x - \xi).
+  \end{align*}
+\end{proof}
+
+\begin{lemma} \label{lem:logineq}
+  For all $x \in (0, \infty)$,
+  \[
+    \log x \leq x - 1.
+  \]
+\end{lemma}
+
+\begin{proof}
+  $f(x) = \log x$ is a concave function over the interval $(0, \infty)$. Use Lemma~\ref{lem:meanconcave} with $\xi = 1$.
+  \begin{align*}
+    \log x - \log 1 &\leq \frac{d}{dx}(\log x) \Big|_{x=1} (x - 1) \\
+    \log x - 0 &\leq 1 (x - 1) \\
+    \log x &\leq x - 1.
+  \end{align*}
+\end{proof}
+
+Let $\bm{Y} = (Y_1, \dots, Y_n)^T$ be a random vector consisting of observations from a stationary, isotropic Gaussian process with mean 0 and covariance function $C$. The observations are located at $\bm{s}_1, \dots, \bm{s}_n \in \mathcal{D} \subseteq \mathbb{R}^d$ in some bounded domain $\mathcal{D}$. Then the distribution of $\bm{Y}$ is
+\[
+  \bm{Y} \sim \mathcal{N}_n(0, \bm{\Sigma})
+\]
+where $\Sigma_{ij} = C(||\bm{s}_i - \bm{s}_j||) = C(h_{ij})$. The likelihood function is
+\[
+  \ell(\bm{\Sigma}; \bm{y}) = -\frac{n}{2} \log(2\pi) - \frac{1}{2} \log \textrm{det}(\bm{\Sigma}) - \frac{1}{2} \bm{y}^T \bm{\Sigma}^{-1} \bm{y}.
+\]
+
+\begin{theorem}
+  Suppose we observe data $\bm{y} = (y_1, \dots, y_n)^T$ from a Gaussian process described above. Let 
+  \[
+    \hat{\ell}(\bm{\beta}; \bm{y}) = -\frac{n}{2} \log(2\pi) - \frac{1}{2} \log \textnormal{det}(\widehat{\bm{\Sigma}}(\bm{\beta})) - \frac{1}{2} \bm{y}^T \widehat{\bm{\Sigma}}^{-1}(\bm{\beta}) \bm{y}
+  \]
+  be the approximated likelihood from our method. The $(i,j)$th element of the approximated covariance matrix $\widehat{\bm{\Sigma}}$ is defined as
+  \[
+    \widehat{\bm{\Sigma}}_{ij} = \frac{1}{M} \sum_{m=1}^M \cos(\widetilde{\omega}_m h_{ij})
+  \]
+ where $\{\widetilde{\omega}_1, \dots, \widetilde{\omega}_M\}$ are random samples distributed according to $f_\omega$. Then as $M \to \infty$, $\hat{\ell}(\bm{\beta}; \bm{y}) \to \ell(\bm{\Sigma}; \bm{y})$ a.s. $f_\omega$.
+\end{theorem}
+
+\begin{proof}
+
+We will show that
+\[
+\Big|\hat{\ell}(\bm{\beta}; \bm{y}) - \ell(\bm{\Sigma}; \bm{y})\Big| = -\frac{1}{2} \Big| \log \textrm{det}(\widehat{\bm{\Sigma}}) - \log \textrm{det}(\bm{\Sigma}) \Big| - \frac{1}{2} \bm{y}^T \Big| \widehat{\bm{\Sigma}}^{-1} - \bm{\Sigma}^{-1} \Big| \bm{y} \to 0.
+\]
+The notation in the final term refers to
+\[
+  \Big| \widehat{\bm{\Sigma}}^{-1} - \bm{\Sigma}^{-1} \Big| =
+  \begin{bmatrix}[2]
+    \Big| \widehat{\Sigma}^{-1}_{11} - \Sigma^{-1}_{11} \Big| & \Big| \widehat{\Sigma}^{-1}_{12} - \Sigma^{-1}_{12} \Big| & \cdots \\
+    \Big| \widehat{\Sigma}^{-1}_{21} - \Sigma^{-1}_{21} \Big| & \Big| \widehat{\Sigma}^{-1}_{22} - \Sigma^{-1}_{22} \Big| & \cdots \\
+    \vdots & \vdots & \ddots
+  \end{bmatrix}.
+\] \label{symb:absmat}
+Consider the first term. Let $\lambda_1, \dots, \lambda_n$ and $\hat{\lambda}_1, \dots, \hat{\lambda}_n$ be the eigenvalues of $\bm{\Sigma}$ and $\widehat{\bm{\Sigma}}$ respectively.
+\[
+  \Big| \log \textrm{det}(\widehat{\bm{\Sigma}}) - \log \textrm{det}(\bm{\Sigma}) \Big| = \left| \sum_{i=1}^n \log \hat{\lambda}_i - \sum_{i=1}^n \log \lambda_i \right| = \left| \sum_{i=1}^n \log \frac{\hat{\lambda}_i}{\lambda_i} \right|.
+\]
+From Lemma~\ref{lem:logineq},
+\begin{align*}
+  \sum_{i=1}^n \log \frac{\hat{\lambda}_i}{\lambda_i} &\leq \sum_{i=1}^n \left( \frac{\hat{\lambda}_i}{\lambda_i} - 1 \right) \\
+  &= \sum_{i=1}^n \frac{\hat{\lambda}_i - \lambda_i}{\lambda_i} \\
+  &\leq \sum_{i=1}^n \frac{|\hat{\lambda}_i - \lambda_i|}{\lambda_i} \\
+  &\leq \sqrt{\sum_{i=1}^n (\hat{\lambda}_i - \lambda_i)^2} \sqrt{\sum_{i=1}^n \frac{1}{\lambda_i^2}}. \tag{Cauchy-Schwarz}
+\end{align*}
+Because for all $i,j$, $\widehat{\Sigma}_{ij} \xrightarrow[M \to \infty]{} \Sigma_{ij}$ uniformly a.s. $f_\omega$, the Frobenius norm 
+\[
+  ||\widehat{\bm{\Sigma}} - \bm{\Sigma}||_F = \sqrt{\sum_{i=1}^n \sum_{j=1}^n \left| \widehat{\Sigma}_{ij} - \Sigma_{ij} \right|^2} \xrightarrow[M \to \infty]{} 0.
+\]
+Theorem 4.2.8 of~\cite{hsing2015theoretical} tells us that
+\[
+  \sup_{k \geq 0} |\hat{\lambda}_{k+1} - \lambda_{k+1}| \leq ||\widehat{\bm{\Sigma}} - \bm{\Sigma}||.
+\]
+Therefore
+\begin{align*}
+  \sup_{k \geq 0} |\hat{\lambda}_{k+1} - \lambda_{k+1}| &\to 0 \\
+  \sum_{i=1}^n (\hat{\lambda}_i - \lambda_i)^2 &\to 0 \\
+  \Big| \log \textrm{det}(\widehat{\bm{\Sigma}}) - \log \textrm{det}(\bm{\Sigma}) \Big| &\to 0 \quad \textrm{a.s. } f_\omega.
+\end{align*}
+
+Now consider the second term. We need to show that
+\[
+  \bm{y}^T \Big| \widehat{\bm{\Sigma}}^{-1} - \bm{\Sigma}^{-1} \Big| \bm{y} \xrightarrow[M \to \infty]{} 0.
+\]
+\begin{align*}
+  \Big|\Big| \bm{y}^T \big| \widehat{\bm{\Sigma}}^{-1} - \bm{\Sigma}^{-1} \big| \bm{y} \Big|\Big| &\leq ||\widehat{\bm{\Sigma}}^{-1} - \bm{\Sigma}^{-1}|| \; ||\bm{y}||^2 \\
+  &\leq || \widehat{\bm{\Sigma}}^{-1} \bm{\Sigma} \bm{\Sigma}^{-1} - \widehat{\bm{\Sigma}}^{-1} \widehat{\bm{\Sigma}} \bm{\Sigma}^{-1} || \; ||\bm{y}||^2 \\
+  &\leq || \widehat{\bm{\Sigma}}^{-1} (\bm{\Sigma} - \widehat{\bm{\Sigma}}) \bm{\Sigma}^{-1} || \; ||\bm{y}||^2 \\
+  &\leq || \widehat{\bm{\Sigma}}^{-1} || \; || \bm{\Sigma} - \widehat{\bm{\Sigma}} || \; || \bm{\Sigma}^{-1} || \; ||\bm{y}||^2.
+\end{align*}
+As previously shown, $|| \bm{\Sigma} - \widehat{\bm{\Sigma}} || \xrightarrow[M \to \infty]{} 0$, so
+\[
+  \bm{y}^T \Big| \widehat{\bm{\Sigma}}^{-1} - \bm{\Sigma}^{-1} \Big| \bm{y} \xrightarrow[M \to \infty]{} 0 \quad \textrm{a.s. } f_\omega
+\]
+as desired.
+
+\end{proof}
