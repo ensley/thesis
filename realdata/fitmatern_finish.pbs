@@ -1,0 +1,14 @@
+#!/bin/bash -login
+
+#PBS -A cyberlamp
+#PBS -l qos=cl_gpu
+#PBS -m abe
+#PBS -M ensley@psu.edu
+#PBS -l walltime=12:00:00
+#PBS -l nodes=1:ppn=1:gpus=1:shared
+#PBS -l mem=8gb
+
+module purge
+module load r/3.4
+cd ~/work/thesis/realdata
+Rscript 05-processoutput.R ~/work/thesis/results/realdata/fitmatern2 init_args.rds ~/work/thesis/results/realdata/fitmatern2

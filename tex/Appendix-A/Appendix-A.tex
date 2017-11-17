@@ -53,16 +53,22 @@ where $\Sigma_{ij} = C(||\bm{s}_i - \bm{s}_j||) = C(h_{ij})$. The likelihood fun
   \ell(\bm{\Sigma}; \bm{y}) = -\frac{n}{2} \log(2\pi) - \frac{1}{2} \log \textrm{det}(\bm{\Sigma}) - \frac{1}{2} \bm{y}^T \bm{\Sigma}^{-1} \bm{y}.
 \]
 
+
+
+
 \begin{theorem}
-  Suppose we observe data $\bm{y} = (y_1, \dots, y_n)^T$ from a Gaussian process described above. Let 
-  \[
-    \hat{\ell}(\bm{\beta}; \bm{y}) = -\frac{n}{2} \log(2\pi) - \frac{1}{2} \log \textnormal{det}(\widehat{\bm{\Sigma}}(\bm{\beta})) - \frac{1}{2} \bm{y}^T \widehat{\bm{\Sigma}}^{-1}(\bm{\beta}) \bm{y}
-  \]
-  be the approximated likelihood from our method. The $(i,j)$th element of the approximated covariance matrix $\widehat{\bm{\Sigma}}$ is defined as
-  \[
-    \widehat{\bm{\Sigma}}_{ij} = \frac{1}{M} \sum_{m=1}^M \cos(\widetilde{\omega}_m h_{ij})
-  \]
- where $\{\widetilde{\omega}_1, \dots, \widetilde{\omega}_M\}$ are random samples distributed according to $f_\omega$. Then as $M \to \infty$, $\hat{\ell}(\bm{\beta}; \bm{y}) \to \ell(\bm{\Sigma}; \bm{y})$ a.s. $f_\omega$.
+	Let $\bm{y} = (y_1, \dots, y_n)^T$ be a vector of observations from a mean-zero stationary, isotropic Gaussian process with covariance function $C(h)$, taken at locations $\bm{s}_1, \dots, \bm{s}_n \in \mathcal{D} \subseteq \mathbb{R}^d$ in some bounded domain $\mathcal{D}$.  For some symmetric density $f(\omega)$, let $\ell(\bm{y})$ be the likelihood
+	\[
+		\ell(\bm{y}) = -\frac{n}{2} \log(2\pi) - \frac{1}{2} \log(|\bm{\Sigma}|) - \frac{1}{2} \bm{y}^T \bm{\Sigma}^{-1} \bm{y},
+	\]
+where $\Sigma_{ij} = \int \cos(h_{ij}\omega)f(\omega)d\omega$, and $\hat{\ell}(\bm{y})$ be the Monte Carlo approximated likelihood
+   	\[
+ 		\hat{\ell}(\bm{y}) = -\frac{n}{2} \log(2\pi) - \frac{1}{2} \log (| \widehat{\bm{\Sigma}}|) - \frac{1}{2} \bm{y}^T \widehat{\bm{\Sigma}}^{-1} \bm{y}
+	\] 
+where $\widehat{\Sigma}_{ij} = \frac{1}{M} \sum_{m=1}^M \cos(\widetilde{\omega}_m h_{ij})$, and $\widehat{\omega}_1, \dots, \widehat{\omega}_M$ are and iid sample from $f(\omega)$.  Then as $M \to \infty$,
+\[
+\hat{\ell}(\bm{y}) \to \ell(\bm{y}) \text{ a.s.-}f_\omega.
+\]
 \end{theorem}
 
 \begin{proof}

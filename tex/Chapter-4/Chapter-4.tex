@@ -1,18 +1,37 @@
 \chapter{Data Application} \label{chapter4:Data-Application}
 
-This project presents a method for estimating the covariance function of a stationary isotropic Gaussian process that does not rely on choosing a parametric family that may or may not fit the data well. It allows the data alone to drive the estimation, yet still guarantees that the estimated covariance function will turn out to be positive definite.
+To evaluate the performance of our method on real data, we use an atomic force microscopy (AFM) image of a solar cell. The image (see Figure~\ref{fig:film}) comes from a paper by Singh et al.~\cite{Singh2014}, who wanted to improve efficiency of converting light into electricity by optimizing the concentration of carbon nanotubes in solar cells coated with a particular compound called poly(3-hexylthiophene): phenyl-C61-butyric acid methyl ester (P3HT:PCBM). This compound is spread in a microscopically thin film over the cell.
 
-Estimating the covariance matrix element by element is an extremely computationally intensive problem, and one that would scale quite poorly if it were executed sequentially. However, this issue is largely alleviated through the use of parallel computing on a GPU. For a moderately sized problem (here $n = 400$), the GPU approach results in a speedup of roughly $100\times$.
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.65\textwidth]{film.png}
+	\caption{Atomic force microscopy image of a thin film of the P3HT:PCBM compound on a solar cell. Dark clusters represent areas where the film is thinner, and lighter clusters are thicker areas.}
+	\label{fig:film}
+\end{figure}
 
-In Figure~\ref{fig:result}, the estimated spectral density appears to match the true $f(\omega)$ fairly well in the right tail, for $\log \omega > 2$ or so, but does poorly in the left tail. Currently I am still trying to explain why this happens. One theory is that there simply isn't enough data at frequencies very close to zero to obtain a good estimate in this range. It is encouraging, however, that the approximation is good in the right tail. Often, our goal is to get an accurate estimate of how the covariance decays as the spatial distance increases.
+Figure~\ref{fig:film} shows a P3HT:PCBM film doped with a 0.1\% concentration of carbon nanotubes. By treating the film thickness as observations from an unknown isotropic stationary Gaussian process, our goal was to train a covariance model on some of these observations and predict the others.
 
-\section{Future Work} % (fold)
-\label{sec:future_work}
+To prepare the data, we selected ten 25-by-25 pixel squares to use to estimate the covariance function. We treated the squares as 10 independent observations of a Gaussian process on the 25-by-25 grid. Once we obtained our estimate, we selected an out of sample 25-by-25 square, removed a 4-by-4 section of that square made predictions conditionally on the remainder as observations in the square. One of the training squares is shown in Figure~\ref{fig:training25}, and Figure~\ref{fig:pred25} shows the observation square, with the withheld prediction points highlighted in red.
 
-This project is still a work in progress. As mentioned in Section~\ref{sec:calculating_the_likelihood}, I am working on a formal proof that the estimated likelihood converges to the true likelihood. In addition, I believe the performance of Algorithm~\ref{alg:mcmc} could be improved. The results in Figure~\ref{fig:result} are disappointing, but I think it could be more accurate with better proposal distributions and/or better knot placement. It could use more tinkering.
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.95\textwidth]{col_image_5.pdf}
+	\caption{One of the 10 25-by-25 sections of the film image used to fit the spline model.}
+	\label{fig:training25}
+\end{figure}
 
-The overall speed could be improved as well. Currently the MCMC algorithm runs in R, and invokes a CUDA C function to perform the Monte Carlo integrations. Translating all of the code into C/C++ would improve the performance even further. In particular, there is a matrix inversion via Cholesky decomposition in the likelihood calculation. It's possible to implement that in parallel on a GPU as well, which would allow $n$ to be larger than $400$ without harming performance too much.
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.95\textwidth]{col_pred.pdf}
+	\caption{This 25-by-25 section of the film image was held out from the training step. The 16 outlined pixels are used for prediction, and the others are treated as observations.}
+	\label{fig:pred25}
+\end{figure}
 
-Finally, we would like to be able to relax the assumptions on the Gaussian process. We still need stationarity, but it should be a straighforward extension to eliminate the need to assume the process is isotropic.
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.95\textwidth]{covariance_realdata.pdf}
+	\caption{The estimated covariance function based on the 10 25-by-25 sections of the film image used to fit the spline model.}
+	\label{fig:covariance-realdata}
+\end{figure}
 
-% subsection future_work (end)
+We fit the semiparametric model and a Mat\'ern model, and compare the prediction performance of each. The mean squared prediction error for the Mat\'ern model was $0.0008707$, while the mean squared prediction error for the semiparametric model was $0.0006414$. The semiparametric model performed $26.3\%$ better on the 16 prediction points, indicating that it is capturing the local behavior of the Gaussian process more effectively than the best-fit Mat\'ern model can. Figure~\ref{fig:covariance-realdata} shows the estimated covariance function from the semiparametric model. There is a significant hole effect that a Mat\'ern model is not capable of capturing.

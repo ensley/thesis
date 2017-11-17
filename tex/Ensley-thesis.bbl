@@ -1,0 +1,94 @@
+\begin{thebibliography}{10}
+\newcommand{\enquote}[1]{``#1''}
+\providecommand{\url}[1]{\texttt{#1}}
+\providecommand{\urlprefix}{URL }
+\providecommand{\eprint}[2][]{\url{#2}}
+
+\bibitem{gelfand2010handbook}
+\textsc{Gelfand, A.~E.}, \textsc{P.~J. Diggle}, \textsc{M.~Fuentes}, and
+  \textsc{P.~Guttorp} (2010) \emph{Handbook of Spatial Statistics}, CRC press.
+
+\bibitem{ver1993multivariable}
+\textsc{Ver~Hoef, J.~M.} and \textsc{N.~Cressie} (1993) \enquote{Multivariable
+  spatial prediction,} \emph{Mathematical Geology}, \textbf{25}(2), pp.
+  219--240.
+
+\bibitem{banerjee2014hierarchical}
+\textsc{Banerjee, S.}, \textsc{B.~P. Carlin}, and \textsc{A.~E. Gelfand} (2014)
+  \emph{Hierarchical modeling and analysis for spatial data}, Crc Press.
+
+\bibitem{handcock1994approach}
+\textsc{Handcock, M.~S.} and \textsc{J.~R. Wallis} (1994) \enquote{An approach
+  to statistical spatial-temporal modeling of meteorological fields,}
+  \emph{Journal of the American Statistical Association}, \textbf{89}(426), pp.
+  368--378.
+
+\bibitem{Stein1999}
+\textsc{Stein, M.~L.} (1999) \emph{{Interpolation of Spatial Data}}.
+\newline\urlprefix\url{http://books.google.co.uk/books?id=5n{\_}XuL2Wx1EC}
+
+\bibitem{Ye2015}
+\textsc{Ye, J.}, \textsc{N.~A. Lazar}, and \textsc{Y.~Li} (2015)
+  \enquote{{Nonparametric variogram modeling with hole effect structure in
+  analyzing the spatial characteristics of fMRI data},} \emph{Journal of
+  Neuroscience Methods}, \textbf{240}, pp. 101--115.
+
+\bibitem{bochner1955harmonic}
+\textsc{Bochner, S.} (1955) \enquote{Harmonic analysis and probability theory,}
+  \emph{Berkeley and Los Angeles}.
+
+\bibitem{IM2007}
+\textsc{Im, H.~K.}, \textsc{M.~L. Stein}, and \textsc{Z.~Zhu}
+  \enquote{{Semiparametric Estimation of Spectral Density With Irregular
+  Observations},} \emph{Journal of the American Statistical Association},
+  (478), pp. 726--735.
+
+\bibitem{Hall1994}
+\textsc{Hall, P.}, \textsc{N.~I. Fisher}, and \textsc{B.~Hoffmann} (1994)
+  \enquote{{On the Nonparametric Estimation of Covariance Functions},}
+  \emph{The Annals of Statistics}, \textbf{22}(4), pp. 2115--2134.
+
+\bibitem{Singh2014}
+\textsc{Singh, V.}, \textsc{S.~Arora}, \textsc{M.~Arora}, \textsc{V.~Sharma},
+  and \textsc{R.~P. Tandon} (2014) \enquote{{Optimizing P3HT/PCBM/MWCNT films
+  for increased stability in polymer bulk heterojunction solar cells},}
+  \emph{Physics Letters, Section A: General, Atomic and Solid State Physics},
+  \textbf{378}(41), pp. 3046--3054.
+\newline\urlprefix\url{http://dx.doi.org/10.1016/j.physleta.2014.08.028}
+
+\bibitem{lang2004bayesian}
+\textsc{Lang, S.} and \textsc{A.~Brezger} (2004) \enquote{Bayesian P-splines,}
+  \emph{Journal of computational and graphical statistics}, \textbf{13}(1), pp.
+  183--212.
+
+\bibitem{suchard2010understanding}
+\textsc{Suchard, M.~A.}, \textsc{Q.~Wang}, \textsc{C.~Chan},
+  \textsc{J.~Frelinger}, \textsc{A.~Cron}, and \textsc{M.~West} (2010)
+  \enquote{Understanding GPU programming for statistical computation: Studies
+  in massively parallel massive mixtures,} \emph{Journal of computational and
+  graphical statistics}, \textbf{19}(2), pp. 419--438.
+
+\bibitem{spBayes1}
+\textsc{Finley, A.~O.}, \textsc{S.~Banerjee}, and \textsc{B.~P. Carlin} (2007)
+  \enquote{{spBayes}: An {R} Package for Univariate and Multivariate
+  Hierarchical Point-Referenced Spatial Models,} \emph{Journal of Statistical
+  Software}, \textbf{19}(4), pp. 1--24.
+\newline\urlprefix\url{http://www.jstatsoft.org/v19/i04/}
+
+\bibitem{spBayes2}
+\textsc{Finley, A.~O.}, \textsc{S.~Banerjee}, and \textsc{A.~E.Gelfand} (2015)
+  \enquote{{spBayes} for Large Univariate and Multivariate Point-Referenced
+  Spatio-Temporal Data Models,} \emph{Journal of Statistical Software},
+  \textbf{63}(13), pp. 1--28.
+\newline\urlprefix\url{http://www.jstatsoft.org/v63/i13/}
+
+\bibitem{fuentes2002spectral}
+\textsc{Fuentes, M.} (2002) \enquote{Spectral methods for nonstationary spatial
+  processes,} \emph{Biometrika}, \textbf{89}(1), pp. 197--210.
+
+\bibitem{hsing2015theoretical}
+\textsc{Hsing, T.} and \textsc{R.~Eubank} (2015) \emph{Theoretical foundations
+  of functional data analysis, with an introduction to linear operators}, John
+  Wiley \& Sons.
+
+\end{thebibliography}

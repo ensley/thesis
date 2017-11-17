@@ -1,18 +1,25 @@
 \chapter{Conclusions and Future Work} \label{chapter5:Conclusions}
 
-This project presents a method for estimating the covariance function of a stationary isotropic Gaussian process that does not rely on choosing a parametric family that may or may not fit the data well. It allows the data alone to drive the estimation, yet still guarantees that the estimated covariance function will turn out to be positive definite.
+This paper presents a method for estimating the covariance function of a stationary isotropic Gaussian process that does not rely on choosing a parametric family that may or may not fit the data well. It allows the data alone to drive the estimation, yet still guarantees that the estimated covariance function will turn out to be positive definite.
 
-Estimating the covariance matrix element by element is an extremely computationally intensive problem, and one that would scale quite poorly if it were executed sequentially. However, this issue is largely alleviated through the use of parallel computing on a GPU. For a moderately sized problem (here $n = 400$), the GPU approach results in a speedup of roughly $100\times$.
+It is generally believed~\cite{Stein1999} that fitting a Mat\'ern covariance function, via maximum likelihood or something similar, will give good interpolation performance even if the covariance of the true underlying Gaussian process can't be approximated very closely by a function from the Mat\'ern family. Our simulations in Chapter~\ref{chapter3:Simulation-Study} support that claim. However, our method has performed comparably with regard to prediction (Figure~\ref{fig:pred-log}). In addition, we observed that our method can more closely match the covariance function (Figure~\ref{fig:boxplot-integrals}) in cases where a "hole effect", or distances that correspond to a negative covariance, exists. One example of this phenomenon is the damped cosine covariance function \eqref{eq:dampedcos}.
 
-In Figure~\ref{fig:result}, the estimated spectral density appears to match the true $f(\omega)$ fairly well in the right tail, for $\log \omega > 2$ or so, but does poorly in the left tail. Currently I am still trying to explain why this happens. One theory is that there simply isn't enough data at frequencies very close to zero to obtain a good estimate in this range. It is encouraging, however, that the approximation is good in the right tail. Often, our goal is to get an accurate estimate of how the covariance decays as the spatial distance increases.
+Our method involves estimating the covariance matrix element by element, which is an extremely computationally intensive problem, and one that would scale quite poorly if it were executed sequentially. However, this issue is largely alleviated through the use of parallel computing on a GPU. For a moderately sized problem (here $n = 400$), the GPU approach results in a speedup of roughly $100\times$. %Also, we expect that as the number of observations increases, our method would outperform other methods in terms of speed
 
-\section{Future Work} % (fold)
-\label{sec:future_work}
+% \section{Future Work} % (fold)
+% \label{sec:future_work}
 
-This project is still a work in progress. As mentioned in Section~\ref{sec:calculating_the_likelihood}, I am working on a formal proof that the estimated likelihood converges to the true likelihood. In addition, I believe the performance of Algorithm~\ref{alg:mcmc} could be improved. The results in Figure~\ref{fig:result} are disappointing, but I think it could be more accurate with better proposal distributions and/or better knot placement. It could use more tinkering.
+This semiparametric covariance estimation method could be adapted to allow us to relax the isotropy and stationarity assumptions. Modeling an anisotropic Gaussian process would be a straightforward extension; it would involve replacing the simplification in \eqref{eq:bochner2} with a two-dimensional Fourier transform
+\[
+	C(\bm{h}) = \iint_{-\infty}^{\infty} \exp(i\bm{h}^T\bm{\omega}) \; f(\bm{\omega}) \; d\bm{\omega}.
+\]
 
-The overall speed could be improved as well. Currently the MCMC algorithm runs in R, and invokes a CUDA C function to perform the Monte Carlo integrations. Translating all of the code into C/C++ would improve the performance even further. In particular, there is a matrix inversion via Cholesky decomposition in the likelihood calculation. It's possible to implement that in parallel on a GPU as well, which would allow $n$ to be larger than $400$ without harming performance too much.
+It is possible to relax the stationarity assumption as well. In the literature there are several methods for dealing with spectral densities of nonstationary Gaussian processes. One notable example is the work of Fuentes~\cite{fuentes2002spectral}, who proposed a nonstationary periodogram that is a nonparametric estimator of the spectral density $f(\omega_1, \omega_2)$.
 
-Finally, we would like to be able to relax the assumptions on the Gaussian process. We still need stationarity, but it should be a straighforward extension to eliminate the need to assume the process is isotropic.
+% This project is still a work in progress. As mentioned in Section~\ref{sec:calculating_the_likelihood}, I am working on a formal proof that the estimated likelihood converges to the true likelihood. In addition, I believe the performance of Algorithm~\ref{alg:mcmc} could be improved. The results in Figure~\ref{fig:result} are disappointing, but I think it could be more accurate with better proposal distributions and/or better knot placement. It could use more tinkering.
+
+% The overall speed could be improved as well. Currently the MCMC algorithm runs in R, and invokes a CUDA C function to perform the Monte Carlo integrations. Translating all of the code into C/C++ would improve the performance even further. In particular, there is a matrix inversion via Cholesky decomposition in the likelihood calculation. It's possible to implement that in parallel on a GPU as well, which would allow $n$ to be larger than $400$ without harming performance too much.
+
+% Finally, we would like to be able to relax the assumptions on the Gaussian process. We still need stationarity, but it should be a straighforward extension to eliminate the need to assume the process is isotropic.
 
 % subsection future_work (end)

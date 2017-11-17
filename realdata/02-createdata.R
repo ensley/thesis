@@ -5,7 +5,7 @@ library(imager, quietly = TRUE)
 
 args <- commandArgs(TRUE)
 
-if (length(args) < 4) {
+if (length(args) < 3) {
   stop('Not enough arguments to 02a')
 }
 
@@ -15,12 +15,12 @@ filepath <- args[1]
 # ngrid <- as.numeric(args[4])      # number of observations along one edge of prediction grid
 K <- as.numeric(args[2])          # number of knots (and therefore number of betas)
 B <- as.numeric(args[3])          # number of samples to take from the spectral density
-seed <- args[4]                   # will the random seed be set?
-
-if (seed == 'y') {
-  set.seed(1234)
-  cat('SEED SET.\n')
-}
+# seed <- args[4]                   # will the random seed be set?
+# 
+# if (seed == 'y') {
+#   set.seed(1234)
+#   cat('SEED SET.\n')
+# }
 
 
 

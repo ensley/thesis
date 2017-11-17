@@ -102,48 +102,73 @@ gpobj <- readRDS(file.path(fileinpath, 'gpobj.rds'))
 grid <- gpobj$locs[ ,1:2]
 is_pred <- which(gpobj$locs$type == 'pred')
 pts_obs <- gpobj$Y[-is_pred]
+pts_pred <- gpobj$Y[is_pred]
 dist_pred2obs <- as.matrix(stats::dist(grid))[is_pred,-is_pred]
 draws <- exp(rlogspline(50000, bf, args$knots))
 gamma1 <- matrix(gpumc::mc(dist_pred2obs, draws), nrow = length(is_pred))
 G <- matrix(gpumc::mc(gpobj$dist_obs, draws), nrow = length(pts_obs))
-diag(G) <- 1 + 1e-5
+mineigen <- min(eigen(G, symmetric = TRUE, only.values = TRUE)$values)
+if (mineigen < 0) diag(G) <- diag(G) + abs(mineigen) + 1e-4
 Ginv <- solve(G)
 preds_spline <- drop(gamma1 %*% Ginv %*% pts_obs)
-gpcovr::mse(preds, predYpred)
+gpcovr::mse(preds_spline, pts_pred)
 
 # FIT BEST MATERN ---------------------------------------------------------
 
-starting = list('sigma.sq' = 1, 'tau.sq' = 0.1, 'phi' = 0.5, 'nu' = 1)
-tuning = list('sigma.sq' = 0.01, 'tau.sq' = 0.01, 'phi' = 0.005, 'nu' = 0.005)
-priors = list('sigma.sq.ig' = c(2, 1), 'tau.sq.ig' = c(2, 1), 'phi.unif' = c(1e-5, 20), 'nu.unif' = c(1e-5, 5))
-n_samps <- 5000
-is_obs <- which(gpobj$locs$type == 'obs')
-coords <- as.matrix(gpobj$locs[is_obs,1:2])
-y <- gpobj$Y[is_obs]
-burn.in <- floor(0.75*n_samps)
+args <- readRDS(file.path(fileinpath, 'init_args.rds'))
 
-m_i <- spBayes::spLM(y ~ 1, coords = coords, starting = starting, tuning = tuning, priors = priors, cov.model = 'matern', n.samples = n_samps, n.report = 200)
+# starting = list('sigma.sq' = 1, 'tau.sq' = 0.1, 'phi' = 0.5, 'nu' = 1)
+# tuning = list('sigma.sq' = 0.01, 'tau.sq' = 0.01, 'phi' = 0.005, 'nu' = 0.005)
+# priors = list('sigma.sq.ig' = c(2, 1), 'tau.sq.ig' = c(2, 1), 'phi.unif' = c(1e-5, 20), 'nu.unif' = c(1e-5, 5))
+# n_samps <- 5000
+# is_obs <- which(gpobj$locs$type == 'obs')
+# coords <- as.matrix(gpobj$locs[is_obs,1:2])
+# y <- gpobj$Y[is_obs]
+# burn.in <- floor(0.75*n_samps)
+# 
+# m_i <- spBayes::spLM(y ~ 1, coords = coords, starting = starting, tuning = tuning, priors = priors, cov.model = 'matern', n.samples = n_samps, n.report = 200)
+# 
+# pars <- apply(m_i$p.theta.samples[burn.in:nrow(m_i$p.theta.samples), ], 2, stats::median)
+# model <- RandomFields::RMwhittle(nu = pars['nu'],
+#                                  notinvnu = TRUE,
+#                                  var = pars['sigma.sq'],
+#                                  scale = 1/pars['phi']) +
+#   RandomFields::RMnugget(var = pars['tau.sq'])
+# 
+# params <- c(pars['nu'],
+#             (2 * sqrt(pars['nu'])) / pars['phi'],
+#             pars['sigma.sq'],
+#             pars['tau.sq'])
+# names(params) <- c('nu', 'rho', 'sigma', 'nugget')
+# 
+# fit <- list(model = model, fitobj = m_i, params = params)
 
-pars <- apply(m_i$p.theta.samples[burn.in:nrow(m_i$p.theta.samples), ], 2, stats::median)
-model <- RandomFields::RMwhittle(nu = pars['nu'],
+results <- readRDS('~/Documents/git/thesis/results/realdata/result_true.rds')
+burnin <- 1000
+m <- coda::as.mcmc(results$samps)
+params <- colMeans(window(m, start = burnin))
+model <- RandomFields::RMwhittle(nu = params['nu'],
                                  notinvnu = TRUE,
-                                 var = pars['sigma.sq'],
-                                 scale = 1/pars['phi']) +
-  RandomFields::RMnugget(var = pars['tau.sq'])
+                                 var = params['sigma'],
+                                 scale = 1/params['alpha']) +
+  RandomFields::RMnugget(var = 0.01)
 
-params <- c(pars['nu'],
-            (2 * sqrt(pars['nu'])) / pars['phi'],
-            pars['sigma.sq'],
-            pars['tau.sq'])
-names(params) <- c('nu', 'rho', 'sigma', 'nugget')
 
-fit <- list(model = model, fitobj = m_i, params = params)
+gamma1 <- matrix(RandomFields::RFcov(fit$model, as.numeric(dist_pred2obs)),
+                 nrow = length(is_pred))
+G <- matrix(RandomFields::RFcov(fit$model, as.numeric(gpobj$dist_obs)),
+            nrow = length(pts_obs))
+mineigen <- min(eigen(G, symmetric = TRUE, only.values = TRUE)$values)
+if (mineigen < 0) diag(G) <- diag(G) + mineigen + 1e-4
+Ginv <- solve(G)
+preds_bestmatern <- drop(gamma1 %*% Ginv %*% pts_obs)
+
 
 # COMPUTE PREDICTIONS -----------------------------------------------------
 
 preds <- data.frame(actual = predYpred,
                     spline = preds_spline,
-                    bestmatern = othermodel_predict(gpobj, fit$model))
+                    bestmatern = preds_bestmatern)
 
 write.csv(preds, 'preds.csv')
 
@@ -151,6 +176,7 @@ write.csv(preds, 'preds.csv')
 
 mse_spline <- mse(preds$spline, preds$actual)
 mse_bestmatern <- mse(preds$bestmatern, preds$actual)
+mse_spline / mse_bestmatern
 
 # PLOT PREDICTIONS --------------------------------------------------------
 
