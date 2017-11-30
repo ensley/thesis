@@ -1,0 +1,100 @@
+\begin{thebibliography}{}
+
+\bibitem[Banerjee {\em et~al.}(2014)Banerjee, Carlin, and
+  Gelfand]{banerjee2014hierarchical}
+Banerjee, S., Carlin, B.~P., and Gelfand, A.~E. (2014).
+\newblock {\em Hierarchical modeling and analysis for spatial data\/}.
+\newblock Crc Press.
+
+\bibitem[Bochner(1955)Bochner]{bochner1955harmonic}
+Bochner, S. (1955).
+\newblock Harmonic analysis and probability theory.
+\newblock {\em Berkeley and Los Angeles\/}.
+
+\bibitem[Finley {\em et~al.}(2007)Finley, Banerjee, and Carlin]{spBayes1}
+Finley, A.~O., Banerjee, S., and Carlin, B.~P. (2007).
+\newblock {spBayes}: An {R} package for univariate and multivariate
+  hierarchical point-referenced spatial models.
+\newblock {\em Journal of Statistical Software\/}, {\bf 19}(4), 1--24.
+
+\bibitem[Finley {\em et~al.}(2015)Finley, Banerjee, and E.Gelfand]{spBayes2}
+Finley, A.~O., Banerjee, S., and E.Gelfand, A. (2015).
+\newblock {spBayes} for large univariate and multivariate point-referenced
+  spatio-temporal data models.
+\newblock {\em Journal of Statistical Software\/}, {\bf 63}(13), 1--28.
+
+\bibitem[Fuentes(2002)Fuentes]{fuentes2002spectral}
+Fuentes, M. (2002).
+\newblock Spectral methods for nonstationary spatial processes.
+\newblock {\em Biometrika\/}, {\bf 89}(1), 197--210.
+
+\bibitem[Gelfand {\em et~al.}(2010)Gelfand, Diggle, Fuentes, and
+  Guttorp]{gelfand2010handbook}
+Gelfand, A.~E., Diggle, P.~J., Fuentes, M., and Guttorp, P. (2010).
+\newblock {\em Handbook of Spatial Statistics\/}.
+\newblock CRC press.
+
+\bibitem[Hall {\em et~al.}(1994)Hall, Fisher, and Hoffmann]{Hall1994}
+Hall, P., Fisher, N.~I., and Hoffmann, B. (1994).
+\newblock {On the Nonparametric Estimation of Covariance Functions}.
+\newblock {\em The Annals of Statistics\/}, {\bf 22}(4), 2115--2134.
+
+\bibitem[Handcock and Wallis(1994)Handcock and Wallis]{handcock1994approach}
+Handcock, M.~S. and Wallis, J.~R. (1994).
+\newblock An approach to statistical spatial-temporal modeling of
+  meteorological fields.
+\newblock {\em Journal of the American Statistical Association\/}, {\bf
+  89}(426), 368--378.
+
+\bibitem[Hsing and Eubank(2015)Hsing and Eubank]{hsing2015theoretical}
+Hsing, T. and Eubank, R. (2015).
+\newblock {\em Theoretical foundations of functional data analysis, with an
+  introduction to linear operators\/}.
+\newblock John Wiley \& Sons.
+
+\bibitem[Im {\em et~al.}(????)Im, Stein, and Zhu]{IM2007}
+Im, H.~K., Stein, M.~L., and Zhu, Z. (????).
+\newblock {Semiparametric Estimation of Spectral Density With Irregular
+  Observations}.
+\newblock {\em Journal of the American Statistical Association\/}, (478),
+  726--735.
+
+\bibitem[Lang and Brezger(2004)Lang and Brezger]{lang2004bayesian}
+Lang, S. and Brezger, A. (2004).
+\newblock Bayesian p-splines.
+\newblock {\em Journal of computational and graphical statistics\/}, {\bf
+  13}(1), 183--212.
+
+\bibitem[Singh {\em et~al.}(2014)Singh, Arora, Arora, Sharma, and
+  Tandon]{Singh2014}
+Singh, V., Arora, S., Arora, M., Sharma, V., and Tandon, R.~P. (2014).
+\newblock {Optimizing P3HT/PCBM/MWCNT films for increased stability in polymer
+  bulk heterojunction solar cells}.
+\newblock {\em Physics Letters, Section A: General, Atomic and Solid State
+  Physics\/}, {\bf 378}(41), 3046--3054.
+
+\bibitem[Stein(1999)Stein]{Stein1999}
+Stein, M.~L. (1999).
+\newblock {\em {Interpolation of Spatial Data}\/}.
+
+\bibitem[Suchard {\em et~al.}(2010)Suchard, Wang, Chan, Frelinger, Cron, and
+  West]{suchard2010understanding}
+Suchard, M.~A., Wang, Q., Chan, C., Frelinger, J., Cron, A., and West, M.
+  (2010).
+\newblock Understanding gpu programming for statistical computation: Studies in
+  massively parallel massive mixtures.
+\newblock {\em Journal of computational and graphical statistics\/}, {\bf
+  19}(2), 419--438.
+
+\bibitem[Ver~Hoef and Cressie(1993)Ver~Hoef and Cressie]{ver1993multivariable}
+Ver~Hoef, J.~M. and Cressie, N. (1993).
+\newblock Multivariable spatial prediction.
+\newblock {\em Mathematical Geology\/}, {\bf 25}(2), 219--240.
+
+\bibitem[Ye {\em et~al.}(2015)Ye, Lazar, and Li]{Ye2015}
+Ye, J., Lazar, N.~A., and Li, Y. (2015).
+\newblock {Nonparametric variogram modeling with hole effect structure in
+  analyzing the spatial characteristics of fMRI data}.
+\newblock {\em Journal of Neuroscience Methods\/}, {\bf 240}, 101--115.
+
+\end{thebibliography}

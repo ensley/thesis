@@ -1,0 +1,55 @@
+This is BibTeX, Version 0.99d (TeX Live 2015/Debian)
+Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
+The top-level auxiliary file: ensley-paper.aux
+The style file: natbib.bst
+Database file #1: report.bib
+You're missing a field name---line 14 of file report.bib
+ : 
+ : % url = {http://www.tandfonline.com/doi/abs/10.1198/016214507000000220},
+(Error may have been on previous line)
+I'm skipping whatever remains of this entry
+Warning--empty year in IM2007; set to ????
+Warning--there's a number but no volume in IM2007
+Warning--empty publisher in Stein1999
+You've used 16 entries,
+            2378 wiz_defined-function locations,
+            631 strings with 6732 characters,
+and the built_in function-call counts, 7574 in all, are:
+= -- 742
+> -- 409
+< -- 7
++ -- 119
+- -- 117
+* -- 704
+:= -- 1317
+add.period$ -- 72
+call.type$ -- 16
+change.case$ -- 96
+chr.to.int$ -- 16
+cite$ -- 19
+duplicate$ -- 301
+empty$ -- 493
+format.name$ -- 141
+if$ -- 1484
+int.to.chr$ -- 1
+int.to.str$ -- 0
+missing$ -- 20
+newline$ -- 82
+num.names$ -- 64
+pop$ -- 115
+preamble$ -- 1
+purify$ -- 99
+quote$ -- 0
+skip$ -- 193
+stack$ -- 0
+substring$ -- 487
+swap$ -- 51
+text.length$ -- 0
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 132
+warning$ -- 3
+while$ -- 70
+width$ -- 0
+write$ -- 203
+(There was 1 error message)
