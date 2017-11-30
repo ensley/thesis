@@ -24,7 +24,7 @@ B <- as.numeric(args[3])          # number of samples to take from the spectral 
 
 
 
-im <- load.image('~/git/thesis/film.png')
+im <- load.image('~/Documents/git/thesis/film.png')
 # demean
 im <- im - mean(im)
 N <- 10 # number of squares
@@ -38,7 +38,7 @@ reps_list <- purrr::map2(limit_start, limit_end, ~ im[.x:.y,.y:.x,1,1])
 
 purrr::iwalk(reps_list, function(v, i) {
   pdf(paste0('col_image_', i, '.pdf'))
-  image(v, col = rev(RColorBrewer::brewer.pal(9, 'Blues')))
+  image(v, col = rev(colorRampPalette(RColorBrewer::brewer.pal(9, 'Blues'))(20)))
   dev.off()
   pdf(paste0('bw_image_', i, '.pdf'))
   image(v, col = gray(seq(0, 1, length = 9)))
@@ -56,13 +56,13 @@ cmax <- max(pred_cols)
 cmin <- min(pred_cols) - 1
 
 pdf('col_pred.pdf')
-image(pred_square, col = rev(RColorBrewer::brewer.pal(9, 'Blues')))
+image(pred_square, col = rev(colorRampPalette(RColorBrewer::brewer.pal(9, 'Blues'))(20)))
 polygon((c(rmin, rmax, rmax, rmin) - 0.5)/24, 
         (c(cmin, cmin, cmax, cmax) - 0.5)/24, 
         border = 'red', lwd = 2)
 dev.off()
 pdf('bw_pred.pdf')
-image(pred_square, col = gray(seq(0, 1, length = 9)))
+image(pred_square, col = gray(seq(0, 1, length = 20)))
 polygon((c(rmin, rmax, rmax, rmin) - 0.5)/24, 
         (c(cmin, cmin, cmax, cmax) - 0.5)/24, 
         border = 'white', lwd = 2)
