@@ -168,13 +168,47 @@ dev.off()
 
 # COVARIANCE PLOT ---------------------------------------------------------
 
+covar_plot <- function(h, beta, knots, gpModel = NULL, beta_true = NULL, beta_init = NULL, err_bounds = NULL, ...)
+{
+  l1 <- gpumc::mc(h, exp(rlogspline(50000, beta, knots)))
+  l2 <- if (!is.null(beta_true)) gpumc::mc(h, exp(rlogspline(50000, beta_true, knots))) else NULL
+  l3 <- if (!is.null(gpModel)) RandomFields::RFcov(gpModel$model, h)
+  
+  if (!is.null(err_bounds)) {
+    min_lower_bd <- min(err_bounds[ ,1])
+    min_upper_bd <- min(err_bounds[ ,2])
+    max_lower_bd <- max(err_bounds[ ,1])
+    max_upper_bd <- max(err_bounds[ ,2])
+  } else {
+    min_lower_bd <- min_upper_bd <- max_lower_bd <- max_upper_bd <- NULL
+  }
+  
+  plot_ymin <- min(min_lower_bd, min_upper_bd, min(l1), suppressWarnings(min(l2)), suppressWarnings(min(l3)))
+  plot_ymax <- max(max_lower_bd, max_upper_bd, max(l1), suppressWarnings(max(l2)), suppressWarnings(max(l3)))
+  
+  graphics::plot(range(h), c(plot_ymin, plot_ymax), type = 'n',
+                 xlab = 'h',
+                 ylab = 'C(h)',
+                 main = 'Covariance function', ...)
+  
+  if (!is.null(err_bounds)) graphics::polygon(c(h, rev(h)), c(err_bounds[ ,1], rev(err_bounds[ ,2])), col = 'grey90', border = NA)
+  graphics::lines(h, l1, lwd = 2, col = 'blue')
+  if (!is.null(beta_true)) graphics::lines(h, l3, lwd = 2, lty = 2)
+  # if (!is.null(gpModel)) graphics::lines(h, l3, col = 'orange', lwd = 2, lty = 2)
+  graphics::abline(h = 0, lty = 3)
+  graphics::legend('topright', c('estimated', 'true'), col = c('blue', 'black'), lwd = 2, lty = c(1, 2))
+  
+  invisible(gpModel)
+}
+
 pdf('covariance.pdf')
 covar_plot(x,
            bf,
            args$knots,
            gpModel = args$gp$m,
            beta_true = args$beta_true,
-           err_bounds = cov_err_bounds2)
+           err_bounds = cov_err_bounds2,
+           xlim = c(0, 2))
 dev.off()
 
 ### END COVARIANCE PLOT
