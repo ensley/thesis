@@ -1,6 +1,9 @@
 #! /usr/bin --vanilla --default-packages=utils,gpcovr
 
 library(gpcovr)
+library(doParallel)
+cl <- makeCluster(4)
+registerDoParallel(cl, cores = 4)
 
 args <- commandArgs(TRUE)
 if(length(args) != 3) {
@@ -81,6 +84,18 @@ r_q_sigma <- function(sigma, v_sigma) {
 
 d_q_sigma <- function(sigma, center, v_sigma) {
   dnorm(sigma, mean = center, sd = sqrt(v_sigma), log = TRUE)
+}
+
+normal_ll_exact <- function(x, h, nu, alpha, sigma, tau) {
+  lik <- foreach (i = 1:ncol(x), .combine = '+', .packages = 'gpcovr') %dopar% {
+    covmat <- matern_cor(h, nu, alpha, sigma)
+    diag(covmat) <- sigma + tau
+    cholmat <- chol(covmat)
+    log_det <- sum(log(diag(cholmat)))
+    quadform <- drop(crossprod(backsolve(cholmat, x[ ,i], transpose = TRUE)))
+    -0.5 * (length(x) * log(2*pi) + 2 * log_det + quadform)
+  }
+  lik
 }
 
 

@@ -1,6 +1,6 @@
 #! /usr/bin --vanilla --default-packages=utils,gpcovr
 
-
+library(tidyverse)
 library(gpcovr)
 
 args <- commandArgs(TRUE)
@@ -164,11 +164,73 @@ Ginv <- solve(G)
 preds_bestmatern <- drop(gamma1 %*% Ginv %*% pts_obs)
 
 
+
+
+
+
+m_i <- spBayes::spLM(y ~ 1, coords = coords, starting = starting, tuning = tuning, priors = priors, cov.model = 'exponential', n.samples = n_samps, n.report = 200)
+
+pars <- apply(m_i$p.theta.samples[burn.in:nrow(m_i$p.theta.samples), ], 2, stats::median)
+model <- RandomFields::RMexp(var = pars['sigma.sq'],
+                             scale = 1/pars['phi']) +
+  RandomFields::RMnugget(var = pars['tau.sq'])
+
+gamma1 <- matrix(RandomFields::RFcov(model, as.numeric(dist_pred2obs)),
+                 nrow = length(is_pred))
+G <- matrix(RandomFields::RFcov(model, as.numeric(gpobj$dist_obs)),
+            nrow = length(pts_obs))
+mineigen <- min(eigen(G, symmetric = TRUE, only.values = TRUE)$values)
+if (mineigen < 0) diag(G) <- diag(G) + mineigen + 1e-4
+Ginv <- solve(G)
+preds_bestexp <- drop(gamma1 %*% Ginv %*% pts_obs)
+
+
+
+m_i <- spBayes::spLM(y ~ 1, coords = coords, starting = starting, tuning = tuning, priors = priors, cov.model = 'spherical', n.samples = n_samps, n.report = 200)
+
+pars <- apply(m_i$p.theta.samples[burn.in:nrow(m_i$p.theta.samples), ], 2, stats::median)
+model <- RandomFields::RMexp(var = pars['sigma.sq'],
+                             scale = 1/pars['phi']) +
+  RandomFields::RMnugget(var = pars['tau.sq'])
+
+gamma1 <- matrix(RandomFields::RFcov(model, as.numeric(dist_pred2obs)),
+                 nrow = length(is_pred))
+G <- matrix(RandomFields::RFcov(model, as.numeric(gpobj$dist_obs)),
+            nrow = length(pts_obs))
+mineigen <- min(eigen(G, symmetric = TRUE, only.values = TRUE)$values)
+if (mineigen < 0) diag(G) <- diag(G) + mineigen + 1e-4
+Ginv <- solve(G)
+preds_bestspherical <- drop(gamma1 %*% Ginv %*% pts_obs)
+
+
+
+
+m_i <- spBayes::spLM(y ~ 1, coords = coords, starting = starting, tuning = tuning, priors = priors, cov.model = 'gaussian', n.samples = n_samps, n.report = 200)
+
+pars <- apply(m_i$p.theta.samples[burn.in:nrow(m_i$p.theta.samples), ], 2, stats::median)
+model <- RandomFields::RMexp(var = pars['sigma.sq'],
+                             scale = 1/pars['phi']) +
+  RandomFields::RMnugget(var = pars['tau.sq'])
+
+gamma1 <- matrix(RandomFields::RFcov(model, as.numeric(dist_pred2obs)),
+                 nrow = length(is_pred))
+G <- matrix(RandomFields::RFcov(model, as.numeric(gpobj$dist_obs)),
+            nrow = length(pts_obs))
+mineigen <- min(eigen(G, symmetric = TRUE, only.values = TRUE)$values)
+if (mineigen < 0) diag(G) <- diag(G) + mineigen + 1e-4
+Ginv <- solve(G)
+preds_bestgaussian <- drop(gamma1 %*% Ginv %*% pts_obs)
+
+
+
 # COMPUTE PREDICTIONS -----------------------------------------------------
 
 preds <- data.frame(actual = predYpred,
                     spline = preds_spline,
-                    bestmatern = preds_bestmatern)
+                    bestmatern = preds_bestmatern,
+                    bestexp = preds_bestexp,
+                    bestspherical = preds_bestspherical,
+                    bestgaussian = preds_bestgaussian)
 
 write.csv(preds, 'preds.csv')
 
@@ -176,10 +238,26 @@ write.csv(preds, 'preds.csv')
 
 mse_spline <- mse(preds$spline, preds$actual)
 mse_bestmatern <- mse(preds$bestmatern, preds$actual)
-mse_spline / mse_bestmatern
+mse_bestexponential <- mse(preds_bestexp, preds$actual)
+mse_bestgaussian <- mse(preds_bestgaussian, preds$actual)
+mse_bestspherical <- mse(preds_bestspherical, preds$actual)
+
+mses <- data.frame(type = c('spline', 'best matern', 'best exponential', 'best gaussian', 'best spherical'),
+                   mse = c(mse_spline, mse_bestmatern, mse_bestexponential, mse_bestgaussian, mse_bestspherical))
+mses %>% mutate(mse_rel = mse / mse_spline) %>% 
+  arrange(mse_rel) %>% knitr::kable(format = 'latex', booktabs = TRUE)
+
 
 # PLOT PREDICTIONS --------------------------------------------------------
 
 pdf('pairs.pdf')
 pairs(preds, pch = 20, cex = 0.5)
 dev.off()
+
+
+preds %>% 
+  select(-X) %>% 
+  gather(key = 'type', value = 'value', spline:bestgaussian) %>% 
+  mutate(residual = value - actual) %>% 
+  ggplot(aes(actual, residual, color = type)) +
+  geom_point()
