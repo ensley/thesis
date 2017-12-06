@@ -24,7 +24,7 @@ B <- as.numeric(args[3])          # number of samples to take from the spectral 
 
 
 
-im <- load.image('~/Documents/git/thesis/film.png')
+im <- load.image('~/git/thesis/film.png')
 # demean
 im <- im - mean(im)
 N <- 10 # number of squares

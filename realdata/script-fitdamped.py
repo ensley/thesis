@@ -75,6 +75,6 @@ filename = 'init_args.rds'
 
 starttime = datetime.now()
 subprocess.call(['Rscript', '02-createdata.R', filepath, str(15), str(50000)])
-subprocess.call(['Rscript', '03-fitmatern.R', filepath, filename, fileoutpath, str(iterations)])
+subprocess.call(['Rscript', '03-fitdamped.R', filepath, filename, fileoutpath, str(iterations)])
 
 sendEmail(starttime, gmail_user, gmail_password, 'johnensley17@gmail.com', 'johnensley17@gmail.com', 1, 1, 1)

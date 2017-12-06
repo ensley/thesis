@@ -82,21 +82,6 @@ dev.off()
 ### END LOG DENSITY PLOT
 
 
-
-# COVARIANCE PLOT ---------------------------------------------------------
-
-pdf('covariance.pdf')
-covar_plot(x,
-           bf,
-           args$knots,
-           gpModel = args$gp$m,
-           beta_true = args$beta_true,
-           err_bounds = cov_err_bounds2)
-dev.off()
-
-### END COVARIANCE PLOT
-
-
 gpobj <- readRDS(file.path(fileinpath, 'gpobj.rds'))
 # predict(gpobj, beta = bf, knots = args$knots)
 grid <- gpobj$locs[ ,1:2]
@@ -143,83 +128,151 @@ args <- readRDS(file.path(fileinpath, 'init_args.rds'))
 # 
 # fit <- list(model = model, fitobj = m_i, params = params)
 
-results <- readRDS('~/Documents/git/thesis/results/realdata/result_true.rds')
-burnin <- 1000
+results <- readRDS('~/git/thesis/results/realdata/try4/result_true.rds')
+burnin <- 300
 m <- coda::as.mcmc(results$samps)
 params <- colMeans(window(m, start = burnin))
-model <- RandomFields::RMwhittle(nu = params['nu'],
+model_matern <- RandomFields::RMwhittle(nu = params['nu'],
                                  notinvnu = TRUE,
                                  var = params['sigma'],
                                  scale = 1/params['alpha']) +
   RandomFields::RMnugget(var = 0.01)
 
 
-gamma1 <- matrix(RandomFields::RFcov(fit$model, as.numeric(dist_pred2obs)),
+gamma1 <- matrix(RandomFields::RFcov(model_matern, as.numeric(dist_pred2obs)),
                  nrow = length(is_pred))
-G <- matrix(RandomFields::RFcov(fit$model, as.numeric(gpobj$dist_obs)),
+G <- matrix(RandomFields::RFcov(model_matern, as.numeric(gpobj$dist_obs)),
             nrow = length(pts_obs))
 mineigen <- min(eigen(G, symmetric = TRUE, only.values = TRUE)$values)
 if (mineigen < 0) diag(G) <- diag(G) + mineigen + 1e-4
 Ginv <- solve(G)
 preds_bestmatern <- drop(gamma1 %*% Ginv %*% pts_obs)
+lines(x, RandomFields::RFcov(model_matern, x))
 
 
 
+results <- readRDS('~/git/thesis/results/realdata/trydamped1/result_true.rds')
+burnin <- 300
+m <- coda::as.mcmc(results$samps)
+params <- colMeans(window(m, start = burnin))
+model_damped <- RandomFields::RMdampedcos(lambda = params['lambda'],
+                                   var = params['var'],
+                                   scale = params['scale']) +
+  RandomFields::RMnugget(var = 0.01)
 
 
-
-m_i <- spBayes::spLM(y ~ 1, coords = coords, starting = starting, tuning = tuning, priors = priors, cov.model = 'exponential', n.samples = n_samps, n.report = 200)
-
-pars <- apply(m_i$p.theta.samples[burn.in:nrow(m_i$p.theta.samples), ], 2, stats::median)
-model <- RandomFields::RMexp(var = pars['sigma.sq'],
-                             scale = 1/pars['phi']) +
-  RandomFields::RMnugget(var = pars['tau.sq'])
-
-gamma1 <- matrix(RandomFields::RFcov(model, as.numeric(dist_pred2obs)),
+gamma1 <- matrix(RandomFields::RFcov(model_damped, as.numeric(dist_pred2obs)),
                  nrow = length(is_pred))
-G <- matrix(RandomFields::RFcov(model, as.numeric(gpobj$dist_obs)),
+G <- matrix(RandomFields::RFcov(model_damped, as.numeric(gpobj$dist_obs)),
             nrow = length(pts_obs))
 mineigen <- min(eigen(G, symmetric = TRUE, only.values = TRUE)$values)
 if (mineigen < 0) diag(G) <- diag(G) + mineigen + 1e-4
 Ginv <- solve(G)
-preds_bestexp <- drop(gamma1 %*% Ginv %*% pts_obs)
+preds_bestdamped <- drop(gamma1 %*% Ginv %*% pts_obs)
+lines(x, RandomFields::RFcov(model_damped, x))
 
 
+# COVARIANCE PLOT ---------------------------------------------------------
 
-m_i <- spBayes::spLM(y ~ 1, coords = coords, starting = starting, tuning = tuning, priors = priors, cov.model = 'spherical', n.samples = n_samps, n.report = 200)
+covar_plot <- function(h, beta, knots, gpModel = NULL, beta_true = NULL, beta_init = NULL, err_bounds = NULL)
+{
+  l1 <- gpumc::mc(h, exp(rlogspline(50000, beta, knots)))
+  l2 <- if (!is.null(beta_true)) gpumc::mc(h, exp(rlogspline(50000, beta_true, knots))) else NULL
+  l3 <- if (!is.null(gpModel)) RandomFields::RFcov(gpModel$model, h)
+  
+  if (!is.null(err_bounds)) {
+    min_lower_bd <- min(err_bounds[ ,1])
+    min_upper_bd <- min(err_bounds[ ,2])
+    max_lower_bd <- max(err_bounds[ ,1])
+    max_upper_bd <- max(err_bounds[ ,2])
+  } else {
+    min_lower_bd <- min_upper_bd <- max_lower_bd <- max_upper_bd <- NULL
+  }
+  
+  plot_ymin <- min(min_lower_bd, min_upper_bd, min(l1), suppressWarnings(min(l2)), suppressWarnings(min(l3)))
+  plot_ymax <- max(max_lower_bd, max_upper_bd, max(l1), suppressWarnings(max(l2)), suppressWarnings(max(l3)))
+  
+  graphics::plot(range(h), c(plot_ymin, plot_ymax), type = 'n',
+                 xlab = 'h',
+                 ylab = 'C(h)',
+                 main = 'Covariance function')
+  
+  if (!is.null(err_bounds)) graphics::polygon(c(h, rev(h)), c(err_bounds[ ,1], rev(err_bounds[ ,2])), col = 'grey90', border = NA)
+  graphics::lines(h, l1, lwd = 2, col = 'blue')
+  if (!is.null(beta_true)) graphics::lines(h, l2, lwd = 2, lty = 2)
+  if (!is.null(gpModel)) graphics::lines(h, l3, col = 'orange', lwd = 2, lty = 2)
+  graphics::abline(h = 0, lty = 3)
+  # graphics::legend('topright', c('estimated', 'optimal', 'true'), col = c('blue', 'black', 'orange'), lwd = 2, lty = c(1, 2, 2))
+  
+  invisible(gpModel)
+}
 
-pars <- apply(m_i$p.theta.samples[burn.in:nrow(m_i$p.theta.samples), ], 2, stats::median)
-model <- RandomFields::RMexp(var = pars['sigma.sq'],
-                             scale = 1/pars['phi']) +
-  RandomFields::RMnugget(var = pars['tau.sq'])
+pdf('covariance_with_others.pdf')
+covar_plot(x,
+           bf,
+           args$knots,
+           gpModel = args$gp$m,
+           beta_true = args$beta_true,
+           err_bounds = cov_err_bounds2)
+lines(x, RandomFields::RFcov(model_matern, x))
+lines(x, RandomFields::RFcov(model_damped, x))
+dev.off()
 
-gamma1 <- matrix(RandomFields::RFcov(model, as.numeric(dist_pred2obs)),
-                 nrow = length(is_pred))
-G <- matrix(RandomFields::RFcov(model, as.numeric(gpobj$dist_obs)),
-            nrow = length(pts_obs))
-mineigen <- min(eigen(G, symmetric = TRUE, only.values = TRUE)$values)
-if (mineigen < 0) diag(G) <- diag(G) + mineigen + 1e-4
-Ginv <- solve(G)
-preds_bestspherical <- drop(gamma1 %*% Ginv %*% pts_obs)
-
+### END COVARIANCE PLOT
 
 
-
-m_i <- spBayes::spLM(y ~ 1, coords = coords, starting = starting, tuning = tuning, priors = priors, cov.model = 'gaussian', n.samples = n_samps, n.report = 200)
-
-pars <- apply(m_i$p.theta.samples[burn.in:nrow(m_i$p.theta.samples), ], 2, stats::median)
-model <- RandomFields::RMexp(var = pars['sigma.sq'],
-                             scale = 1/pars['phi']) +
-  RandomFields::RMnugget(var = pars['tau.sq'])
-
-gamma1 <- matrix(RandomFields::RFcov(model, as.numeric(dist_pred2obs)),
-                 nrow = length(is_pred))
-G <- matrix(RandomFields::RFcov(model, as.numeric(gpobj$dist_obs)),
-            nrow = length(pts_obs))
-mineigen <- min(eigen(G, symmetric = TRUE, only.values = TRUE)$values)
-if (mineigen < 0) diag(G) <- diag(G) + mineigen + 1e-4
-Ginv <- solve(G)
-preds_bestgaussian <- drop(gamma1 %*% Ginv %*% pts_obs)
+# m_i <- spBayes::spLM(y ~ 1, coords = coords, starting = starting, tuning = tuning, priors = priors, cov.model = 'exponential', n.samples = n_samps, n.report = 200)
+# 
+# pars <- apply(m_i$p.theta.samples[burn.in:nrow(m_i$p.theta.samples), ], 2, stats::median)
+# model <- RandomFields::RMexp(var = pars['sigma.sq'],
+#                              scale = 1/pars['phi']) +
+#   RandomFields::RMnugget(var = pars['tau.sq'])
+# 
+# gamma1 <- matrix(RandomFields::RFcov(model, as.numeric(dist_pred2obs)),
+#                  nrow = length(is_pred))
+# G <- matrix(RandomFields::RFcov(model, as.numeric(gpobj$dist_obs)),
+#             nrow = length(pts_obs))
+# mineigen <- min(eigen(G, symmetric = TRUE, only.values = TRUE)$values)
+# if (mineigen < 0) diag(G) <- diag(G) + mineigen + 1e-4
+# Ginv <- solve(G)
+# preds_bestexp <- drop(gamma1 %*% Ginv %*% pts_obs)
+# 
+# 
+# 
+# m_i <- spBayes::spLM(y ~ 1, coords = coords, starting = starting, tuning = tuning, priors = priors, cov.model = 'spherical', n.samples = n_samps, n.report = 200)
+# 
+# pars <- apply(m_i$p.theta.samples[burn.in:nrow(m_i$p.theta.samples), ], 2, stats::median)
+# model <- RandomFields::RMexp(var = pars['sigma.sq'],
+#                              scale = 1/pars['phi']) +
+#   RandomFields::RMnugget(var = pars['tau.sq'])
+# 
+# gamma1 <- matrix(RandomFields::RFcov(model, as.numeric(dist_pred2obs)),
+#                  nrow = length(is_pred))
+# G <- matrix(RandomFields::RFcov(model, as.numeric(gpobj$dist_obs)),
+#             nrow = length(pts_obs))
+# mineigen <- min(eigen(G, symmetric = TRUE, only.values = TRUE)$values)
+# if (mineigen < 0) diag(G) <- diag(G) + mineigen + 1e-4
+# Ginv <- solve(G)
+# preds_bestspherical <- drop(gamma1 %*% Ginv %*% pts_obs)
+# 
+# 
+# 
+# 
+# m_i <- spBayes::spLM(y ~ 1, coords = coords, starting = starting, tuning = tuning, priors = priors, cov.model = 'gaussian', n.samples = n_samps, n.report = 200)
+# 
+# pars <- apply(m_i$p.theta.samples[burn.in:nrow(m_i$p.theta.samples), ], 2, stats::median)
+# model <- RandomFields::RMexp(var = pars['sigma.sq'],
+#                              scale = 1/pars['phi']) +
+#   RandomFields::RMnugget(var = pars['tau.sq'])
+# 
+# gamma1 <- matrix(RandomFields::RFcov(model, as.numeric(dist_pred2obs)),
+#                  nrow = length(is_pred))
+# G <- matrix(RandomFields::RFcov(model, as.numeric(gpobj$dist_obs)),
+#             nrow = length(pts_obs))
+# mineigen <- min(eigen(G, symmetric = TRUE, only.values = TRUE)$values)
+# if (mineigen < 0) diag(G) <- diag(G) + mineigen + 1e-4
+# Ginv <- solve(G)
+# preds_bestgaussian <- drop(gamma1 %*% Ginv %*% pts_obs)
 
 
 

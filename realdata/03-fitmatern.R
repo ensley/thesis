@@ -2,17 +2,20 @@
 
 library(gpcovr)
 library(doParallel)
-cl <- makeCluster(4)
-registerDoParallel(cl, cores = 4)
+cl <- makeCluster(8)
+registerDoParallel(cl, cores = 8)
 
 args <- commandArgs(TRUE)
-if(length(args) != 3) {
+if(length(args) != 4) {
   stop("incorrect arguments")
 }
 
 filepath <- args[1]
 filename <- args[2]
 outpath <- args[3]
+N <- as.numeric(args[4])
+
+cat('running ', N, ' iterations\n')
 
 args <- readRDS(file.path(filepath, filename))
 
@@ -75,7 +78,7 @@ r_q_nu <- function(nu, v_nu) {
 }
 
 d_q_nu <- function(nu, center, v_nu) {
-  dnorm(nu, mean = center, sd = sqrt(v_alpha), log = TRUE)
+  dnorm(nu, mean = center, sd = sqrt(v_nu), log = TRUE)
 }
 
 r_q_sigma <- function(sigma, v_sigma) {
@@ -249,5 +252,5 @@ mcmc_true <- function(numit, H, Y, nugget, init_nu, init_alpha, init_sigma, v_nu
   return(list(samps = result, tuning = v))
 }
 
-result_true <- mcmc_true(10000, args$dist_obs, args$Y, nugget, init_nu, init_alpha, init_sigma, 0.1, 0.1, 0.1, 1, 100, 5, r.opt = 0.23, r = 5)
-saveRDS(result_true, 'result_true.rds')
+result_true <- mcmc_true(N, args$dist_obs, args$Y, nugget, init_nu, init_alpha, init_sigma, 0.1, 0.1, 0.1, 1, 100, 5, r.opt = 0.23, r = 5)
+saveRDS(result_true, file.path(outpath, 'result_true.rds'))
