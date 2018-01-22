@@ -143,6 +143,6 @@ for i in range(1, N):
 subprocess.call(['Rscript', '05-processoutput.R', filepath, 'init_args.rds', filepath])
 
 gmail_user = 'johnensley17@gmail.com'
-gmail_password = 'KiphGuzv0@Jehi'
+gmail_password = 'put password here'
 
 sendEmail(starttime, gmail_user, gmail_password, 'johnensley17@gmail.com', 'johnensley17@gmail.com')

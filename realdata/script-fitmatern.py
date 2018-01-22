@@ -67,7 +67,7 @@ os.makedirs(fileoutpath, exist_ok=True)
 N = iterations // 100
 
 gmail_user = 'johnensley17@gmail.com'
-gmail_password = 'KiphGuzv0@Jehi'
+gmail_password = 'put password here'
 
 
 filename = 'init_args.rds'

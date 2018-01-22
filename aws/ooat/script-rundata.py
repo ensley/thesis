@@ -52,7 +52,7 @@ def sendEmail(starttime, usr, pw, fromaddr, toaddr, i, idx_start, idx_end):
 
     print('Email sent!')
 
-# sendEmail(datetime.now(), 'johnensley17@gmail.com', 'KiphGuzv0@Jehi', 'johnensley17@gmail.com', 'johnensley17@gmail.com', 12, 10, 19)
+# sendEmail(datetime.now(), 'johnensley17@gmail.com', 'put password here', 'johnensley17@gmail.com', 'johnensley17@gmail.com', 12, 10, 19)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('iterations', help='number of iterations for each dataset')
@@ -72,7 +72,7 @@ os.makedirs(fileoutpath, exist_ok=True)
 N = iterations // 100
 
 gmail_user = 'johnensley17@gmail.com'
-gmail_password = 'KiphGuzv0@Jehi'
+gmail_password = 'put password here'
 
 for i in range(idx_start, idx_end+1):
     curoutpath = os.path.join(fileoutpath, 'dataset' + str(i).zfill(3))
